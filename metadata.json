@@ -1,0 +1,6 @@
+{
+  "name": "ClientSphere",
+  "description": "A modern, professional full-stack CRM platform to seamlessly manage clients, leads, tasks, and sales pipelines.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
