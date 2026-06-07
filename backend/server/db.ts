@@ -4,7 +4,7 @@
  */
 
 import { Pool } from 'pg';
-import { User, Client, Lead, Task, Pipeline } from '../src/types';
+import { User, Client, Lead, Task, Pipeline } from '../../frontend/src/types';
 
 const DEFAULT_USERS: User[] = [
   {
@@ -202,9 +202,21 @@ class Database {
 
   constructor() {
     const connectionString = process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/clientsphere';
-    this.pool = new Pool({
-      connectionString,
-    });
+    
+    try {
+      const parsedUrl = new URL(connectionString);
+      this.pool = new Pool({
+        user: decodeURIComponent(parsedUrl.username),
+        password: decodeURIComponent(parsedUrl.password),
+        host: parsedUrl.hostname,
+        port: parseInt(parsedUrl.port || '5432', 10),
+        database: parsedUrl.pathname.slice(1) || 'clientsphere',
+      });
+    } catch (e) {
+      // Fallback if URL parsing fails for some reason
+      this.pool = new Pool({ connectionString });
+    }
+    
     this.initializedPromise = this.init();
   }
 
@@ -217,15 +229,20 @@ class Database {
       if (err.code === '3D000') {
         console.log('Database does not exist. Attempting to create database automatically...');
         try {
-          const dbNameMatch = connectionString.match(/\/([^\/?]+)(\?.*)?$/);
-          if (dbNameMatch) {
-            const dbName = dbNameMatch[1];
-            const baseUrl = connectionString.substring(0, connectionString.lastIndexOf('/' + dbName));
-            const adminPool = new Pool({ connectionString: baseUrl + '/postgres' });
-            await adminPool.query(`CREATE DATABASE "${dbName}"`);
-            await adminPool.end();
-            console.log(`Database "${dbName}" created successfully.`);
-          }
+          const parsedUrl = new URL(connectionString);
+          const dbName = parsedUrl.pathname.slice(1);
+          
+          const adminPool = new Pool({
+            user: decodeURIComponent(parsedUrl.username),
+            password: decodeURIComponent(parsedUrl.password),
+            host: parsedUrl.hostname,
+            port: parseInt(parsedUrl.port || '5432', 10),
+            database: 'postgres' // Connect to default database
+          });
+          
+          await adminPool.query(`CREATE DATABASE "${dbName}"`);
+          await adminPool.end();
+          console.log(`Database "${dbName}" created successfully.`);
         } catch (createErr) {
           console.error('Failed to automatically create database:', createErr);
         }
@@ -538,7 +555,7 @@ class Database {
         createdAt: new Date().toISOString()
       };
       await this.pool.query(
-        'INSERT INTO pipelines ("id", "title", "value", "stage", "createdAt") VALUES ($1, $2, $3, $4)',
+        'INSERT INTO pipelines ("id", "title", "value", "stage", "createdAt") VALUES ($1, $2, $3, $4, $5)',
         [newPipeline.id, newPipeline.title, newPipeline.value, newPipeline.stage, newPipeline.createdAt]
       );
       return newPipeline;

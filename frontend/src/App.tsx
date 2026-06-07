@@ -10,8 +10,6 @@ import { ProtectedRoute } from './routes/index';
 import { DashboardLayout } from './components/layout/DashboardLayout';
 
 // Pages
-import { LoginPage } from './pages/LoginPage';
-import { RegisterPage } from './pages/RegisterPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { ClientsPage } from './pages/ClientsPage';
 import { LeadsPage } from './pages/LeadsPage';
@@ -23,10 +21,6 @@ export default function App() {
     <AuthProvider>
       <BrowserRouter>
         <Routes>
-          {/* Public Auth Portals */}
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
-
           {/* Protected Client Workspace Core */}
           <Route
             path="/dashboard"

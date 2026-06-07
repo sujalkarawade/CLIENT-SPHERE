@@ -102,7 +102,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
               })}
             </nav>
 
-            <div className="mt-auto border-t border-[#27272a] pt-4 flex flex-col gap-3">
+            <div className="mt-auto border-t border-[#27272a] pt-4">
               <div className="flex items-center gap-3 px-2">
                 <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-[#18181b] to-[#27272a] border border-[#27272a] flex items-center justify-center font-display font-bold text-sm text-white">
                   {user?.name?.[0]?.toUpperCase() || 'U'}
@@ -112,13 +112,6 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
                   <p className="text-xs text-zinc-500 truncate">{user?.email}</p>
                 </div>
               </div>
-              <button
-                onClick={handleLogout}
-                className="flex items-center gap-3 w-full px-4 py-2 rounded-md text-sm font-medium text-rose-400 hover:bg-rose-500/10 transition-colors duration-150"
-              >
-                <LogOut className="w-4 h-4" />
-                Sign Out
-              </button>
             </div>
           </div>
         </div>
@@ -156,7 +149,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
           })}
         </nav>
 
-        <div className="mt-auto border-t border-[#27272a] pt-4 flex flex-col gap-4">
+        <div className="mt-auto border-t border-[#27272a] pt-4">
           <div className="flex items-center gap-3 px-2">
             <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-[#18181b] to-[#27272a] flex items-center justify-center font-display font-black text-sm text-white border border-[#27272a]">
               {user?.name?.[0]?.toUpperCase() || 'C'}
@@ -166,13 +159,6 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
               <p className="text-xs text-zinc-500 truncate">{user?.email}</p>
             </div>
           </div>
-          <button
-            onClick={handleLogout}
-            className="flex items-center gap-2.5 w-full px-4 py-2 hover:bg-rose-950/20 text-rose-400 hover:text-rose-300 border border-transparent hover:border-rose-500/10 rounded-md text-xs font-semibold transition-all duration-150"
-          >
-            <LogOut className="w-3.5 h-3.5" />
-            Sign Out
-          </button>
         </div>
       </aside>
 

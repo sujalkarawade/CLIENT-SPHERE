@@ -7,7 +7,7 @@ import { Router, Response } from 'express';
 import { db } from '../db';
 import { hashPassword, comparePassword, generateToken } from '../utils/crypto';
 import { authMiddleware, AuthenticatedRequest } from '../middleware/auth';
-import { PipelineStage, LeadStatus, ClientStatus, TaskStatus, TaskPriority, Pipeline } from '../../src/types';
+import { PipelineStage, LeadStatus, ClientStatus, TaskStatus, TaskPriority, Pipeline } from '../../../frontend/src/types';
 
 const router = Router();
 
