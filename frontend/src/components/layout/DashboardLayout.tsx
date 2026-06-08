@@ -16,7 +16,7 @@ import {
   Menu,
   X,
   Plus,
-  Sparkles,
+  Mail,
   ShieldCheck
 } from 'lucide-react';
 
@@ -36,7 +36,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
     { name: 'Leads', to: '/leads', icon: UserPlus },
     { name: 'Tasks', to: '/tasks', icon: CheckSquare },
     { name: 'Sales Pipeline', to: '/pipeline', icon: Layers },
-    { name: 'Email Generator', to: '/email-generator', icon: Sparkles },
+    { name: 'Email Generator', to: '/email-generator', icon: Mail },
   ];
 
   const handleLogout = () => {

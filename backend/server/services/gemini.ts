@@ -42,7 +42,7 @@ Generate a clear, compelling, and relevant subject line and a structured email b
 `;
 
   const response = await aiClient.models.generateContent({
-    model: 'gemini-2.5-flash',
+    model: 'gemini-2.0-flash',
     contents: prompt,
     config: {
       responseMimeType: 'application/json',
@@ -62,8 +62,11 @@ Generate a clear, compelling, and relevant subject line and a structured email b
     throw new Error('No content returned from Gemini.');
   }
 
+  // Strip markdown code fences if present (e.g. ```json ... ```)
+  const cleaned = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
+
   try {
-    const parsed = JSON.parse(text);
+    const parsed = JSON.parse(cleaned);
     return {
       subject: parsed.subject || '',
       body: parsed.body || '',

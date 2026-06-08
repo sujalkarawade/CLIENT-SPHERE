@@ -505,7 +505,7 @@ router.get('/dashboard/stats', authMiddleware, async (req, res) => {
 // AI EMAIL GENERATOR ROUTER
 // =====================================================
 
-import { generateEmail } from '../services/gemini';
+import { generateEmail } from '../services/openrouter';
 
 router.post('/ai/generate', authMiddleware, async (req, res) => {
   try {

@@ -7,8 +7,9 @@ import React, { useState, useEffect } from 'react';
 import { aiEmailService } from '../../services/api';
 import { AIEmail } from '../../types';
 import { Toast, ToastType } from '../../components/common/Toast';
+import './AIEmailGeneratorPage.css';
 import {
-  Sparkles,
+  Zap,
   Copy,
   Check,
   RotateCw,
@@ -16,11 +17,12 @@ import {
   AlertTriangle,
   Inbox,
   Send,
-  Mail,
   FileText,
   Calendar,
   Heart,
-  ChevronRight
+  ChevronRight,
+  Pencil,
+  X
 } from 'lucide-react';
 
 const PURPOSES = [
@@ -56,6 +58,11 @@ export const AIEmailGeneratorPage: React.FC = () => {
   
   // API Key Configuration Warning State
   const [apiKeyWarning, setApiKeyWarning] = useState<string | null>(null);
+
+  // Edit mode state
+  const [isEditing, setIsEditing] = useState(false);
+  const [editSubject, setEditSubject] = useState('');
+  const [editBody, setEditBody] = useState('');
 
   // Notifications
   const [toastMsg, setToastMsg] = useState<string | null>(null);
@@ -95,6 +102,7 @@ export const AIEmailGeneratorPage: React.FC = () => {
     setApiKeyWarning(null);
     setSaved(false);
     setSelectedHistoryId(null);
+    setIsEditing(false);
 
     try {
       const result = await aiEmailService.generate({
@@ -169,6 +177,7 @@ export const AIEmailGeneratorPage: React.FC = () => {
     setGeneratedSubject(email.subject);
     setGeneratedBody(email.body);
     setSaved(true);
+    setIsEditing(false);
     
     // Fill back inputs for easy tweak or regeneration
     setClientName(email.clientName);
@@ -177,6 +186,30 @@ export const AIEmailGeneratorPage: React.FC = () => {
     setTone(email.tone);
     setAdditionalContext(email.additionalContext || '');
     setApiKeyWarning(null);
+  };
+
+  // Enter edit mode
+  const handleStartEdit = () => {
+    setEditSubject(generatedSubject);
+    setEditBody(generatedBody);
+    setIsEditing(true);
+  };
+
+  // Discard edits
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    setEditSubject('');
+    setEditBody('');
+  };
+
+  // Confirm edits — update displayed content and reset saved state
+  const handleSaveEdit = () => {
+    if (!editSubject.trim() && !editBody.trim()) return;
+    setGeneratedSubject(editSubject);
+    setGeneratedBody(editBody);
+    setSaved(false); // mark unsaved so user can re-save to CRM
+    setIsEditing(false);
+    triggerToast('Changes applied. Save to CRM to persist.', 'success');
   };
 
   return (
@@ -259,7 +292,7 @@ export const AIEmailGeneratorPage: React.FC = () => {
         {/* Column 2 - Parameters Form */}
         <form onSubmit={handleGenerate} className="eg-card eg-card--form">
           <h3 className="eg-card__title">
-            <Sparkles className="eg-card__title-icon" />
+            <Zap className="eg-card__title-icon" />
             Parameters
           </h3>
 
@@ -340,7 +373,7 @@ export const AIEmailGeneratorPage: React.FC = () => {
             </div>
 
             <button type="submit" disabled={generating} className="eg-submit-btn">
-              <Sparkles className="eg-submit-btn__icon" />
+              <Zap className="eg-submit-btn__icon" />
               {generating ? 'Drafting Copy...' : 'Generate AI Copy'}
             </button>
           </div>
@@ -353,34 +386,43 @@ export const AIEmailGeneratorPage: React.FC = () => {
             
             {generatedSubject && generatedBody && !generating && (
               <div className="eg-output-actions">
-                <button type="button" className="eg-action-btn" onClick={handleCopy} title="Copy Email">
-                  {copied ? (
-                    <>
-                      <Check className="eg-action-btn__icon text-emerald-400" />
-                      Copied
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="eg-action-btn__icon" />
-                      Copy
-                    </>
-                  )}
-                </button>
+                {!isEditing && (
+                  <>
+                    <button type="button" className="eg-action-btn" onClick={handleCopy} title="Copy Email">
+                      {copied ? (
+                        <>
+                          <Check className="eg-action-btn__icon text-emerald-400" />
+                          Copied
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="eg-action-btn__icon" />
+                          Copy
+                        </>
+                      )}
+                    </button>
 
-                <button
-                  type="button"
-                  disabled={saving || saved}
-                  className={`eg-action-btn ${saved ? 'eg-action-btn--success' : 'eg-action-btn--primary'}`}
-                  onClick={handleSave}
-                >
-                  <Save className="eg-action-btn__icon" />
-                  {saved ? 'Saved' : saving ? 'Saving...' : 'Save to CRM'}
-                </button>
-                
-                <button type="button" className="eg-action-btn" onClick={() => handleGenerate()} title="Regenerate">
-                  <RotateCw className="eg-action-btn__icon" />
-                  Regenerate
-                </button>
+                    <button
+                      type="button"
+                      disabled={saving || saved}
+                      className={`eg-action-btn ${saved ? 'eg-action-btn--success' : 'eg-action-btn--primary'}`}
+                      onClick={handleSave}
+                    >
+                      <Save className="eg-action-btn__icon" />
+                      {saved ? 'Saved' : saving ? 'Saving...' : 'Save to CRM'}
+                    </button>
+
+                    <button type="button" className="eg-action-btn" onClick={handleStartEdit} title="Edit">
+                      <Pencil className="eg-action-btn__icon" />
+                      Edit
+                    </button>
+                    
+                    <button type="button" className="eg-action-btn" onClick={() => handleGenerate()} title="Regenerate">
+                      <RotateCw className="eg-action-btn__icon" />
+                      Regenerate
+                    </button>
+                  </>
+                )}
               </div>
             )}
           </div>
@@ -397,15 +439,48 @@ export const AIEmailGeneratorPage: React.FC = () => {
               </div>
             </div>
           ) : generatedSubject || generatedBody ? (
-            /* Draft Output */
+            /* Draft Output — view or edit mode */
             <div className="eg-output-content">
-              <div className="eg-generated-box">
-                <div className="eg-generated-subject">
-                  <span className="eg-generated-subject__label">Subject:</span>
-                  <span className="eg-generated-subject__text">{generatedSubject}</span>
+              {isEditing ? (
+                <div className="eg-edit-box">
+                  <div className="eg-edit-field">
+                    <label className="eg-label">Subject</label>
+                    <input
+                      className="eg-input"
+                      value={editSubject}
+                      onChange={e => setEditSubject(e.target.value)}
+                      placeholder="Email subject..."
+                    />
+                  </div>
+                  <div className="eg-edit-field eg-edit-field--body">
+                    <label className="eg-label">Body</label>
+                    <textarea
+                      className="eg-textarea eg-textarea--edit"
+                      value={editBody}
+                      onChange={e => setEditBody(e.target.value)}
+                      placeholder="Email body..."
+                    />
+                  </div>
+                  <div className="eg-edit-actions">
+                    <button type="button" className="eg-action-btn" onClick={handleCancelEdit}>
+                      <X className="eg-action-btn__icon" />
+                      Cancel
+                    </button>
+                    <button type="button" className="eg-action-btn eg-action-btn--primary" onClick={handleSaveEdit}>
+                      <Check className="eg-action-btn__icon" />
+                      Apply Changes
+                    </button>
+                  </div>
                 </div>
-                <div className="eg-generated-body">{generatedBody}</div>
-              </div>
+              ) : (
+                <div className="eg-generated-box">
+                  <div className="eg-generated-subject">
+                    <span className="eg-generated-subject__label">Subject:</span>
+                    <span className="eg-generated-subject__text">{generatedSubject}</span>
+                  </div>
+                  <div className="eg-generated-body">{generatedBody}</div>
+                </div>
+              )}
             </div>
           ) : (
             /* Empty State */
