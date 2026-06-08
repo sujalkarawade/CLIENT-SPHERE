@@ -15,6 +15,8 @@ import { ClientsPage } from './pages/ClientsPage/ClientsPage';
 import { LeadsPage } from './pages/LeadsPage/LeadsPage';
 import { TasksPage } from './pages/TasksPage/TasksPage';
 import { PipelinePage } from './pages/PipelinePage/PipelinePage';
+import { AIEmailGeneratorPage } from './pages/AIEmailGeneratorPage/AIEmailGeneratorPage';
+
 
 export default function App() {
   return (
@@ -68,6 +70,16 @@ export default function App() {
               <ProtectedRoute>
                 <DashboardLayout>
                   <PipelinePage />
+                </DashboardLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/email-generator"
+            element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <AIEmailGeneratorPage />
                 </DashboardLayout>
               </ProtectedRoute>
             }

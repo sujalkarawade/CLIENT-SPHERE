@@ -69,3 +69,16 @@ export interface DashboardStats {
   monthlyRevenue: { month: string; amount: number }[];
   leadConversion: { name: string; value: number }[];
 }
+
+export interface AIEmail {
+  id: string;
+  clientName: string;
+  companyName: string;
+  emailPurpose: string;
+  tone: string;
+  additionalContext?: string;
+  subject: string;
+  body: string;
+  createdAt: string;
+}
+

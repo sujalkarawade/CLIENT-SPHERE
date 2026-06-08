@@ -501,4 +501,66 @@ router.get('/dashboard/stats', authMiddleware, async (req, res) => {
   }
 });
 
+// =====================================================
+// AI EMAIL GENERATOR ROUTER
+// =====================================================
+
+import { generateEmail } from '../services/gemini';
+
+router.post('/ai/generate', authMiddleware, async (req, res) => {
+  try {
+    const { clientName, companyName, emailPurpose, tone, additionalContext } = req.body;
+    if (!clientName || !companyName || !emailPurpose || !tone) {
+      res.status(400).json({ message: 'Client name, company name, purpose, and tone are required.' });
+      return;
+    }
+
+    const generated = await generateEmail({
+      clientName,
+      companyName,
+      emailPurpose,
+      tone,
+      additionalContext,
+    });
+
+    res.json(generated);
+  } catch (err: any) {
+    console.error('Error generating email with Gemini:', err);
+    res.status(500).json({ message: err.message || 'Failed to generate email with Gemini.' });
+  }
+});
+
+router.get('/ai/emails', authMiddleware, async (req, res) => {
+  try {
+    const emails = await db.aiEmails.findMany();
+    res.json(emails);
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to retrieve email history.' });
+  }
+});
+
+router.post('/ai/emails', authMiddleware, async (req, res) => {
+  try {
+    const { clientName, companyName, emailPurpose, tone, additionalContext, subject, body } = req.body;
+    if (!clientName || !companyName || !emailPurpose || !tone || !subject || !body) {
+      res.status(400).json({ message: 'Missing required parameters to save email.' });
+      return;
+    }
+
+    const saved = await db.aiEmails.create({
+      clientName,
+      companyName,
+      emailPurpose,
+      tone,
+      additionalContext,
+      subject,
+      body,
+    });
+
+    res.status(201).json(saved);
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to save email to database.' });
+  }
+});
+
 export { router as apiRouter };

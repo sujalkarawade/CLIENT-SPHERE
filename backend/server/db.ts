@@ -4,7 +4,7 @@
  */
 
 import { Pool } from 'pg';
-import { User, Client, Lead, Task, Pipeline } from '../../frontend/src/types';
+import { User, Client, Lead, Task, Pipeline, AIEmail } from '../../frontend/src/types';
 
 const DEFAULT_USERS: User[] = [
   {
@@ -196,6 +196,31 @@ const DEFAULT_PIPELINES: Pipeline[] = [
   }
 ];
 
+const DEFAULT_AI_EMAILS: AIEmail[] = [
+  {
+    id: 'email-default-1',
+    clientName: 'Tony Stark',
+    companyName: 'Stark Industries',
+    emailPurpose: 'Follow-Up Emails',
+    tone: 'Professional',
+    additionalContext: 'Following up on our discussion about AI pipeline integration.',
+    subject: 'AI Pipeline Integration - Next Steps',
+    body: 'Hi Tony,\n\nI hope you are doing well. I am following up on our discussion regarding the AI pipeline integration for Stark Industries. I wanted to see if you had any questions on the details we went over, and if you would like to schedule a brief call next week to finalize the scope.\n\nLooking forward to your thoughts.\n\nBest regards,\nSujal Karawade',
+    createdAt: new Date('2026-06-07T14:30:00Z').toISOString(),
+  },
+  {
+    id: 'email-default-2',
+    clientName: 'Sarah Connor',
+    companyName: 'SkyNet Solutions',
+    emailPurpose: 'Proposal Emails',
+    tone: 'Formal',
+    additionalContext: 'Proposal for enterprise cloud migration services.',
+    subject: 'Proposal: Enterprise Cloud Migration Services',
+    body: 'Dear Sarah,\n\nIt was a pleasure speaking with you regarding SkyNet Solutions\' cloud migration requirements. Please find attached our comprehensive proposal outlining the project scope, timeline, and deliverables for the migration services.\n\nWe believe this solution will significantly improve your system redundancy and security. Please let me know if you would like to schedule a walkthrough of the proposal details.\n\nSincerely,\nSujal Karawade',
+    createdAt: new Date('2026-06-08T09:15:00Z').toISOString(),
+  }
+];
+
 class Database {
   private pool: Pool;
   private initializedPromise: Promise<void>;
@@ -311,6 +336,20 @@ class Database {
         );
       `);
 
+      await this.pool.query(`
+        CREATE TABLE IF NOT EXISTS ai_emails (
+          "id" TEXT PRIMARY KEY,
+          "clientName" TEXT NOT NULL,
+          "companyName" TEXT NOT NULL,
+          "emailPurpose" TEXT NOT NULL,
+          "tone" TEXT NOT NULL,
+          "additionalContext" TEXT,
+          "subject" TEXT NOT NULL,
+          "body" TEXT NOT NULL,
+          "createdAt" TEXT NOT NULL
+        );
+      `);
+
       // Seed default users if empty
       const userRes = await this.pool.query('SELECT COUNT(*)::int as count FROM users');
       if (userRes.rows[0].count === 0) {
@@ -362,6 +401,17 @@ class Database {
           await this.pool.query(
             'INSERT INTO pipelines ("id", "title", "value", "stage", "createdAt") VALUES ($1, $2, $3, $4, $5)',
             [p.id, p.title, p.value, p.stage, p.createdAt]
+          );
+        }
+      }
+
+      // Seed default ai_emails if empty
+      const emailRes = await this.pool.query('SELECT COUNT(*)::int as count FROM ai_emails');
+      if (emailRes.rows[0].count === 0) {
+        for (const e of DEFAULT_AI_EMAILS) {
+          await this.pool.query(
+            'INSERT INTO ai_emails ("id", "clientName", "companyName", "emailPurpose", "tone", "additionalContext", "subject", "body", "createdAt") VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)',
+            [e.id, e.clientName, e.companyName, e.emailPurpose, e.tone, e.additionalContext || '', e.subject, e.body, e.createdAt]
           );
         }
       }
@@ -577,6 +627,28 @@ class Database {
       if (!current) throw new Error(`Pipeline deal with id ${id} not found`);
       await this.pool.query('DELETE FROM pipelines WHERE id = $1', [id]);
       return current;
+    }
+  };
+
+  // AI Email Methods
+  public aiEmails = {
+    findMany: async (): Promise<AIEmail[]> => {
+      await this.ensureInit();
+      const res = await this.pool.query('SELECT * FROM ai_emails ORDER BY "createdAt" DESC');
+      return res.rows;
+    },
+    create: async (data: Omit<AIEmail, 'id' | 'createdAt'>): Promise<AIEmail> => {
+      await this.ensureInit();
+      const newEmail: AIEmail = {
+        ...data,
+        id: `email-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+        createdAt: new Date().toISOString()
+      };
+      await this.pool.query(
+        'INSERT INTO ai_emails ("id", "clientName", "companyName", "emailPurpose", "tone", "additionalContext", "subject", "body", "createdAt") VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)',
+        [newEmail.id, newEmail.clientName, newEmail.companyName, newEmail.emailPurpose, newEmail.tone, newEmail.additionalContext || '', newEmail.subject, newEmail.body, newEmail.createdAt]
+      );
+      return newEmail;
     }
   };
 }

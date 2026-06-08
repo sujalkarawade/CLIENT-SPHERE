@@ -4,7 +4,7 @@
  */
 
 import axios from 'axios';
-import { Client, Lead, Task, Pipeline, DashboardStats, User } from '../types';
+import { Client, Lead, Task, Pipeline, DashboardStats, User, AIEmail } from '../types';
 
 // Set up default axios client pointing relatively to /api
 const api = axios.create({
@@ -119,6 +119,27 @@ export const pipelineService = {
 export const dashboardService = {
   getStats: async () => {
     const res = await api.get<DashboardStats>('/dashboard/stats');
+    return res.data;
+  },
+};
+
+export const aiEmailService = {
+  generate: async (data: {
+    clientName: string;
+    companyName: string;
+    emailPurpose: string;
+    tone: string;
+    additionalContext?: string;
+  }) => {
+    const res = await api.post<{ subject: string; body: string }>('/ai/generate', data);
+    return res.data;
+  },
+  save: async (data: Omit<AIEmail, 'id' | 'createdAt'>) => {
+    const res = await api.post<AIEmail>('/ai/emails', data);
+    return res.data;
+  },
+  getHistory: async () => {
+    const res = await api.get<AIEmail[]>('/ai/emails');
     return res.data;
   },
 };

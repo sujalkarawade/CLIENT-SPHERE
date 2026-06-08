@@ -9,7 +9,7 @@
 
 @layer base {
   html {
-    font-size: 22px;
+    font-size: 18px;
   }
 
   body {
@@ -38,9 +38,9 @@
   animation: slideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* Sidebar base font-size: 20px (slightly smaller than the 22px base) */
+/* Sidebar base font-size */
 aside {
-  font-size: 20px;
+  font-size: 16px;
 }
 
 /* Elegant scrollbars */

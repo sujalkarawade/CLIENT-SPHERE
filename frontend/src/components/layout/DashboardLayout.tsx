@@ -36,6 +36,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
     { name: 'Leads', to: '/leads', icon: UserPlus },
     { name: 'Tasks', to: '/tasks', icon: CheckSquare },
     { name: 'Sales Pipeline', to: '/pipeline', icon: Layers },
+    { name: 'Email Generator', to: '/email-generator', icon: Sparkles },
   ];
 
   const handleLogout = () => {
@@ -45,6 +46,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
 
   const getPageTitle = () => {
     const currentPath = location.pathname;
+    if (currentPath === '/email-generator') return 'AI Email Generator';
     const match = navigation.find(item => item.to === currentPath);
     return match ? match.name : 'ClientSphere';
   };
@@ -65,9 +67,6 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
           <div className="relative flex flex-col w-72 max-w-xs bg-[#09090b] border-r border-[#27272a] p-6 z-50">
             <div className="flex items-center justify-between mb-8">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-[#6366f1] flex items-center justify-center shadow-md">
-                  <div className="w-3.5 h-3.5 border-2 border-white rounded-sm" />
-                </div>
                 <span className="font-display font-semibold text-lg tracking-wide bg-gradient-to-r from-white to-zinc-400 bg-clip-text text-transparent">
                   ClientSphere
                 </span>
@@ -118,12 +117,9 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
       )}
 
       {/* DESKTOP PERMANENT SIDEBAR */}
-      <aside className="hidden lg:flex flex-col w-60 bg-[#09090b] border-r border-[#27272a] shrink-0 py-5 px-5 sticky top-0 h-screen z-30">
-        <div className="flex items-center gap-2.5 mb-8 px-2">
-          <div className="w-8 h-8 rounded-lg bg-[#6366f1] flex items-center justify-center shadow-md">
-            <div className="w-3.5 h-3.5 border-2 border-white rounded-sm" />
-          </div>
-          <span className="font-display font-bold text-lg tracking-wide text-white">
+      <aside className="hidden lg:flex flex-col w-48 bg-[#09090b] border-r border-[#27272a] shrink-0 py-4 px-3 sticky top-0 h-screen z-30">
+        <div className="flex items-center gap-2.5 mb-6 px-2">
+          <span className="font-display font-bold text-base tracking-wide text-white">
             ClientSphere
           </span>
         </div>
@@ -194,7 +190,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
         </header>
 
         {/* WORKSPACE APP BODY */}
-        <main className="flex-1 overflow-y-auto px-6 py-6 lg:px-8 lg:py-8 max-w-[1600px] w-full mx-auto">
+        <main className="flex-1 overflow-y-auto px-6 py-5 lg:px-7 lg:py-6 max-w-[1600px] w-full mx-auto">
           {children}
         </main>
       </div>

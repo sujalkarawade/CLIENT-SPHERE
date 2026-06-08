@@ -3,7 +3,7 @@
 .dp-root {
   display: flex;
   flex-direction: column;
-  gap: 2rem;
+  gap: 1.5rem;
   animation: dpFadeIn 0.2s ease;
 }
 
@@ -30,7 +30,7 @@
   border: 1px solid #27272a;
   border-radius: 0.5rem;
   background: #09090b;
-  padding: 1.25rem 1.5rem;
+  padding: 1rem 1.25rem;
   position: relative;
   overflow: hidden;
   box-shadow: 0 1px 3px rgba(0,0,0,0.3);
@@ -84,7 +84,7 @@
   background: #09090b;
   border: 1px solid #27272a;
   border-radius: 0.5rem;
-  padding: 1.25rem;
+  padding: 1.125rem;
   box-shadow: 0 1px 3px rgba(0,0,0,0.2);
   position: relative;
   overflow: hidden;
@@ -99,7 +99,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 1rem;
+  margin-bottom: 0.75rem;
 }
 
 .dp-kpi-card__label {
