@@ -1,108 +1,167 @@
-# ClientSphere CRM — Full-Stack Platform
+# ClientSphere CRM
 
-ClientSphere is a modern, high-performance, and visually elegant CRM platform built with React 19, TypeScript, Node.js, Express, and fully styled with a premium dark minimalist aesthetic inspired by Stripe, Linear, and Attio.
+A modern, full-stack Customer Relationship Management platform to manage clients, leads, tasks, and sales pipelines — built with React 19, Express, PostgreSQL, and Tailwind CSS 4.
 
----
-
-## 🛠️ Tech Stack & Production Architecture
-
-### Frontend
-- **React 19 / Vite**: High-performance rendering with quick visual updates and zero-flicker compiles.
-- **Tailwind CSS**: Modern theme variables configuring safe visual hierarchies.
-- **Recharts**: Responsive charting widgets mapping income pipelines and lead distributions.
-- **Framer Motion**: Smooth entry layouts transitions.
-- **Lucide Icons**: Consistent vector typography iconography.
-
-### Backend & Database
-- **Express.js (TypeScript)**: Scalable backend routing architecture.
-- **PostgreSQL**: Connected directly using the `pg` (node-postgres) driver. Checks and initializes schemas automatically on startup, pre-seeded with professional ledger data.
-- **Native Node Cryptography**: PBKDF2 hashing routines running clean and safe logins without risking native C++ module breakages during cloud deployments.
+![ClientSphere Dashboard](https://img.shields.io/badge/status-active-brightgreen) ![License](https://img.shields.io/badge/license-Apache--2.0-blue)
 
 ---
 
-## 📂 Project Organization
+## Tech Stack
 
-```text
-clientsphere/
-├── .env                 # Database and authentication secrets configuration
-├── tsconfig.json        # Unified TypeScript rules compiler
-├── package.json         # Module manager & build scripts
-├── backend/             # Backend services and API
-│   ├── server.ts        # Express entry point
-│   └── server/          # Backend modules
-│       ├── db.ts        # Direct PostgreSQL pool client and automatic schema initializer 
-│       ├── routes/
-│       │   └── api.ts   # REST structure (Auth, Clients, Leads, Tasks, Pipeline)
-│       ├── middleware/
-│       │   └── auth.ts  # HTTP Bearer token interceptor
-│       └── utils/
-│           └── crypto.ts# Secure password parsing and PBKDF2 cryptography
-└── frontend/            # Client resources and UI
-    ├── vite.config.ts   # Vite bundler configuration
-    └── src/             # React application
-        ├── types.ts     # Shared typescript database contract models
-        ├── App.tsx      # Router layout maps and authentication providers
-        ├── index.css    # Tailwind style guidelines, custom scrollbars, animations
-        ├── main.tsx     # Target viewport mounting node
-        ├── components/  # Modular UI components
-        ├── pages/       # Pages (Dashboard, Clients, Leads, Tasks, Kanban Pipeline, auth)
-        ├── routes/      # Logical Route Securers
-        └── services/    # Service clients (Axios api integrations)
+| Layer | Technology |
+|-------|-----------|
+| Frontend | React 19, React Router v7, Tailwind CSS 4, Recharts, Framer Motion |
+| Backend | Node.js, Express 4, TypeScript |
+| Database | PostgreSQL (via `pg`) |
+| Auth | JWT (localStorage token) + AuthContext |
+| AI | Google Gemini API (`@google/genai`) |
+| Build | Vite 6, esbuild, TypeScript |
+
+---
+
+## Features
+
+- **Dashboard** — KPI summary cards (total clients, leads, tasks, revenue) with monthly revenue chart and lead conversion breakdown
+- **Clients** — Full CRUD: create, search/filter by status, edit, delete. Statuses: Active / Inactive / Pending
+- **Leads** — Lead tracking with scoring (1–100), source tagging, and status pipeline (New → Contacted → Qualified → Proposal → Nurturing → Unqualified)
+- **Tasks** — Task management with priority levels (Low / Medium / High), due dates, and status tracking (Pending / In Progress / Completed)
+- **Pipeline** — Kanban-style deal board across stages (New Lead → Contacted → Qualified → Proposal Sent → Won / Lost) with deal values
+- **Auth** — JWT-based registration and login with protected routes
+- **Responsive dark UI** throughout
+
+---
+
+## Project Structure
+
+```
+/
+├── backend/
+│   ├── server.ts          ← Express app entry point
+│   ├── load-env.ts        ← dotenv loader
+│   └── server/
+│       └── routes/
+│           └── api.ts     ← All API route definitions
+├── frontend/
+│   ├── src/
+│   │   ├── pages/         ← DashboardPage, ClientsPage, LeadsPage, TasksPage, PipelinePage
+│   │   ├── components/
+│   │   │   ├── layout/    ← DashboardLayout (sidebar nav)
+│   │   │   ├── forms/     ← ClientForm, LeadForm, TaskForm, PipelineForm
+│   │   │   └── common/    ← Dialog, Toast
+│   │   ├── context/
+│   │   │   └── AuthContext.tsx  ← Auth state & JWT token management
+│   │   ├── services/
+│   │   │   └── api.ts     ← Axios API client (authService, clientService, etc.)
+│   │   ├── routes/
+│   │   │   └── index.tsx  ← ProtectedRoute wrapper
+│   │   └── types.ts       ← Shared TypeScript interfaces
+│   ├── index.html
+│   └── vite.config.ts
+├── .env                   ← Environment variables
+├── package.json           ← Root scripts
+└── tsconfig.json
 ```
 
 ---
 
-## 🗄️ PostgreSQL Database Setup
+## Getting Started
 
-The project connects directly to PostgreSQL using the `pg` client pool. The tables and baseline seeding are initialized automatically when you boot up the server.
+### Prerequisites
 
-### Configure Connection
-Create a `.env` file at the root of the project (or customize the existing one):
+- [Node.js](https://nodejs.org/) v18 or later
+- [npm](https://npmjs.com/) (comes with Node)
+- A running PostgreSQL instance
+
+### 1. Install dependencies
+
+```bash
+npm install
+```
+
+### 2. Configure environment variables
+
+Edit `.env` in the project root:
+
 ```env
-# PostgreSQL connection URL
-DATABASE_URL="postgresql://postgres:postgres@123@localhost:5432/clientsphere"
+# PostgreSQL connection string
+DATABASE_URL="postgresql://user:password@localhost:5432/clientsphere"
 
-# Auth JWT Secret
-JWT_SECRET="clientsphere-default-production-key-secret-2026"
+# JWT signing secret
+JWT_SECRET="your-secure-secret-here"
+
+# Optional: Google Gemini API key
+# GEMINI_API_KEY="your-gemini-key"
 ```
 
-### Table Schemas Created Automatically
-The following tables are initialized on startup:
-1. **users**: Platform administrators/agents.
-2. **clients**: Active/pending customer contacts.
-3. **leads**: Scored marketing/sales prospects.
-4. **tasks**: To-do items with status and priority.
-5. **pipelines**: Active sales deals tracking revenue pipeline stages.
+### 3. Set up the database
+
+Create the database and run the schema (see your DB setup scripts or use the `/api` endpoints which auto-initialize tables on first run).
+
+### 4. Start the development server
+
+```bash
+npm run dev
+```
+
+This starts the Express backend (with Vite middleware for the frontend) on **http://localhost:3000**.
 
 ---
 
-## 🚀 Execution & Standard Operations
+## Available Scripts
 
-### Development Mode
-The project is split into frontend and backend servers. You can navigate into their respective directories and run the dev servers.
+| Script | Description |
+|--------|-------------|
+| `npm run dev` | Start full-stack dev server (backend + Vite frontend) on port 3000 |
+| `npm run dev:frontend` | Start only the Vite frontend dev server (port 5173) |
+| `npm run dev:backend` | Start only the Express API server (standalone, no frontend) |
+| `npm run build` | Build frontend + bundle backend to `dist/` |
+| `npm run start` | Run the production build (`dist/server.cjs`) |
+| `npm run clean` | Remove `dist/` and `server-db.json` |
+| `npm run lint` | TypeScript type check |
 
-1. **Start the Backend API Server**:
-```bash
-cd backend
-npm run dev
-```
-*Runs on port 3000.*
+---
 
-2. **Start the Frontend Development Server**:
-```bash
-cd frontend
-npm run dev
-```
-*Runs on port 5173.*
+## API Endpoints
 
-### Product Build & Compile
-Perform optimized asset optimization and bundling for stand-alone delivery from the root directory:
-```bash
-npm run build
-```
+All endpoints are prefixed with `/api`.
 
-### Start Server
-Launches the self-contained production CommonJS build from `/dist`:
-```bash
-npm run start
-```
+| Method | Path | Description |
+|--------|------|-------------|
+| `POST` | `/auth/register` | Register a new user |
+| `POST` | `/auth/login` | Log in, returns JWT token |
+| `GET` | `/auth/me` | Get current user (requires auth) |
+| `GET` | `/clients` | List clients (supports `?search=` & `?status=`) |
+| `POST` | `/clients` | Create a client |
+| `PUT` | `/clients/:id` | Update a client |
+| `DELETE` | `/clients/:id` | Delete a client |
+| `GET` | `/leads` | List leads (supports `?search=` & `?status=`) |
+| `POST` | `/leads` | Create a lead |
+| `PUT` | `/leads/:id` | Update a lead |
+| `DELETE` | `/leads/:id` | Delete a lead |
+| `GET` | `/tasks` | List tasks (supports `?status=`) |
+| `POST` | `/tasks` | Create a task |
+| `PUT` | `/tasks/:id` | Update a task |
+| `DELETE` | `/tasks/:id` | Delete a task |
+| `GET` | `/pipelines` | List pipeline deals |
+| `POST` | `/pipelines` | Create a deal |
+| `PUT` | `/pipelines/:id` | Update a deal (e.g. move stage) |
+| `DELETE` | `/pipelines/:id` | Delete a deal |
+| `GET` | `/dashboard/stats` | Get KPI stats for the dashboard |
+
+Authentication uses Bearer tokens — include `Authorization: Bearer <token>` on protected requests.
+
+---
+
+## Environment Variables
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `DATABASE_URL` | ✅ | PostgreSQL connection string |
+| `JWT_SECRET` | ✅ | Secret for signing JWT tokens |
+| `GEMINI_API_KEY` | Optional | Google Gemini API key for AI features |
+
+---
+
+## License
+
+Apache-2.0

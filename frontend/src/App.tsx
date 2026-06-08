@@ -10,11 +10,11 @@ import { ProtectedRoute } from './routes/index';
 import { DashboardLayout } from './components/layout/DashboardLayout';
 
 // Pages
-import { DashboardPage } from './pages/DashboardPage';
-import { ClientsPage } from './pages/ClientsPage';
-import { LeadsPage } from './pages/LeadsPage';
-import { TasksPage } from './pages/TasksPage';
-import { PipelinePage } from './pages/PipelinePage';
+import { DashboardPage } from './pages/DashboardPage/DashboardPage';
+import { ClientsPage } from './pages/ClientsPage/ClientsPage';
+import { LeadsPage } from './pages/LeadsPage/LeadsPage';
+import { TasksPage } from './pages/TasksPage/TasksPage';
+import { PipelinePage } from './pages/PipelinePage/PipelinePage';
 
 export default function App() {
   return (
