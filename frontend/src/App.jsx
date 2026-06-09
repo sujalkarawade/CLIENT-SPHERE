@@ -16,6 +16,7 @@ import { LeadsPage } from './pages/LeadsPage/LeadsPage';
 import { TasksPage } from './pages/TasksPage/TasksPage';
 import { PipelinePage } from './pages/PipelinePage/PipelinePage';
 import { AIEmailGeneratorPage } from './pages/AIEmailGeneratorPage/AIEmailGeneratorPage';
+import { AILeadScoringPage } from './pages/AILeadScoringPage/AILeadScoringPage';
 
 
 export default function App() {
@@ -80,6 +81,16 @@ export default function App() {
               <ProtectedRoute>
                 <DashboardLayout>
                   <AIEmailGeneratorPage />
+                </DashboardLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/ai-lead-scoring"
+            element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <AILeadScoringPage />
                 </DashboardLayout>
               </ProtectedRoute>
             }

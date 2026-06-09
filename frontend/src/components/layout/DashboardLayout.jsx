@@ -17,7 +17,8 @@ import {
   X,
   Plus,
   Mail,
-  ShieldCheck
+  ShieldCheck,
+  BrainCircuit
 } from 'lucide-react';
 
 export const DashboardLayout = ({ children }) => {
@@ -33,6 +34,7 @@ export const DashboardLayout = ({ children }) => {
     { name: 'Tasks', to: '/tasks', icon: CheckSquare },
     { name: 'Sales Pipeline', to: '/pipeline', icon: Layers },
     { name: 'Email Generator', to: '/email-generator', icon: Mail },
+    { name: 'AI Lead Scoring', to: '/ai-lead-scoring', icon: BrainCircuit },
   ];
 
   const handleLogout = () => {
@@ -43,6 +45,7 @@ export const DashboardLayout = ({ children }) => {
   const getPageTitle = () => {
     const currentPath = location.pathname;
     if (currentPath === '/email-generator') return 'AI Email Generator';
+    if (currentPath === '/ai-lead-scoring') return 'AI Lead Scoring';
     const match = navigation.find(item => item.to === currentPath);
     return match ? match.name : 'ClientSphere';
   };

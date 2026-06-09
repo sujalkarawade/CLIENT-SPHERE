@@ -290,7 +290,10 @@ class Database {
         'CREATE TABLE IF NOT EXISTS leads (' +
         '"id" TEXT PRIMARY KEY, "name" TEXT NOT NULL, "email" TEXT NOT NULL, ' +
         '"phone" TEXT NOT NULL, "source" TEXT NOT NULL, "leadScore" INTEGER NOT NULL, ' +
-        '"status" TEXT NOT NULL, "createdAt" TEXT NOT NULL' +
+        '"status" TEXT NOT NULL, "createdAt" TEXT NOT NULL, ' +
+        '"aiScore" INTEGER DEFAULT NULL, "aiCategory" TEXT DEFAULT NULL, ' +
+        '"conversionProbability" TEXT DEFAULT NULL, "aiReasoning" TEXT DEFAULT NULL, ' +
+        '"recommendedAction" TEXT DEFAULT NULL, "lastScoredAt" TEXT DEFAULT NULL' +
         ');'
       );
 
@@ -316,6 +319,18 @@ class Database {
         '"subject" TEXT NOT NULL, "body" TEXT NOT NULL, "createdAt" TEXT NOT NULL' +
         ');'
       );
+
+      // Migration: Add AI scoring columns to leads table if they don't exist
+      try {
+        await this.pool.query('ALTER TABLE leads ADD COLUMN IF NOT EXISTS "aiScore" INTEGER DEFAULT NULL');
+        await this.pool.query('ALTER TABLE leads ADD COLUMN IF NOT EXISTS "aiCategory" TEXT DEFAULT NULL');
+        await this.pool.query('ALTER TABLE leads ADD COLUMN IF NOT EXISTS "conversionProbability" TEXT DEFAULT NULL');
+        await this.pool.query('ALTER TABLE leads ADD COLUMN IF NOT EXISTS "aiReasoning" TEXT DEFAULT NULL');
+        await this.pool.query('ALTER TABLE leads ADD COLUMN IF NOT EXISTS "recommendedAction" TEXT DEFAULT NULL');
+        await this.pool.query('ALTER TABLE leads ADD COLUMN IF NOT EXISTS "lastScoredAt" TEXT DEFAULT NULL');
+      } catch (migrateErr) {
+        // Column may already exist or table may just have been created with them
+      }
 
       const userRes = await this.pool.query('SELECT COUNT(*)::int as count FROM users');
       if (userRes.rows[0].count === 0) {
@@ -484,8 +499,12 @@ class Database {
       if (!current) throw new Error('Lead with id ' + id + ' not found');
       const updated = { ...current, ...data };
       await this.pool.query(
-        'UPDATE leads SET "name" = $1, "email" = $2, "phone" = $3, "source" = $4, "leadScore" = $5, "status" = $6 WHERE id = $7',
-        [updated.name, updated.email, updated.phone, updated.source, updated.leadScore, updated.status, id]
+        'UPDATE leads SET "name" = $1, "email" = $2, "phone" = $3, "source" = $4, "leadScore" = $5, "status" = $6, ' +
+        '"aiScore" = $7, "aiCategory" = $8, "conversionProbability" = $9, "aiReasoning" = $10, ' +
+        '"recommendedAction" = $11, "lastScoredAt" = $12 WHERE id = $13',
+        [updated.name, updated.email, updated.phone, updated.source, updated.leadScore, updated.status,
+         updated.aiScore ?? null, updated.aiCategory ?? null, updated.conversionProbability ?? null,
+         updated.aiReasoning ?? null, updated.recommendedAction ?? null, updated.lastScoredAt ?? null, id]
       );
       return updated;
     },

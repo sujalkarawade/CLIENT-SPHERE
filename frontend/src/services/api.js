@@ -137,4 +137,23 @@ export const aiEmailService = {
   },
 };
 
+export const aiLeadScoringService = {
+  scoreLead: async (leadId) => {
+    const res = await api.post('/ai/score-lead', { leadId });
+    return res.data;
+  },
+  scoreAllLeads: async () => {
+    const res = await api.post('/ai/score-all-leads');
+    return res.data;
+  },
+  getLeadInsights: async (id) => {
+    const res = await api.get('/ai/lead-insights/' + id);
+    return res.data;
+  },
+  getStats: async () => {
+    const res = await api.get('/ai/lead-scoring/stats');
+    return res.data;
+  },
+};
+
 export default api;
