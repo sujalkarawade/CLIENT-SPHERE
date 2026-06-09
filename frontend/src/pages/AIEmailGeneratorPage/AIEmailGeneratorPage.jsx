@@ -5,8 +5,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { aiEmailService } from '../../services/api';
-import { AIEmail } from '../../types';
-import { Toast, ToastType } from '../../components/common/Toast';
+import { Toast } from '../../components/common/Toast';
 import './AIEmailGeneratorPage.css';
 import {
   Zap,
@@ -35,45 +34,38 @@ const PURPOSES = [
 
 const TONES = ['Professional', 'Friendly', 'Formal', 'Sales'];
 
-export const AIEmailGeneratorPage: React.FC = () => {
-  // Inputs State
+export const AIEmailGeneratorPage = () => {
   const [clientName, setClientName] = useState('');
   const [companyName, setCompanyName] = useState('');
   const [emailPurpose, setEmailPurpose] = useState('Cold Emails');
   const [tone, setTone] = useState('Professional');
   const [additionalContext, setAdditionalContext] = useState('');
 
-  // Generation Output State
   const [generatedSubject, setGeneratedSubject] = useState('');
   const [generatedBody, setGeneratedBody] = useState('');
 
-  // Status and UI States
-  const [history, setHistory] = useState<AIEmail[]>([]);
+  const [history, setHistory] = useState([]);
   const [loadingHistory, setLoadingHistory] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [saving, setSaving] = useState(false);
   const [copied, setCopied] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [selectedHistoryId, setSelectedHistoryId] = useState<string | null>(null);
-  
-  // API Key Configuration Warning State
-  const [apiKeyWarning, setApiKeyWarning] = useState<string | null>(null);
+  const [selectedHistoryId, setSelectedHistoryId] = useState(null);
 
-  // Edit mode state
+  const [apiKeyWarning, setApiKeyWarning] = useState(null);
+
   const [isEditing, setIsEditing] = useState(false);
   const [editSubject, setEditSubject] = useState('');
   const [editBody, setEditBody] = useState('');
 
-  // Notifications
-  const [toastMsg, setToastMsg] = useState<string | null>(null);
-  const [toastType, setToastType] = useState<ToastType>('success');
+  const [toastMsg, setToastMsg] = useState(null);
+  const [toastType, setToastType] = useState('success');
 
-  const triggerToast = (msg: string, type: ToastType) => {
+  const triggerToast = (msg, type) => {
     setToastMsg(msg);
     setToastType(type);
   };
 
-  // Fetch History on Mount
   const fetchHistory = async () => {
     try {
       setLoadingHistory(true);
@@ -90,8 +82,7 @@ export const AIEmailGeneratorPage: React.FC = () => {
     fetchHistory();
   }, []);
 
-  // AI Generation Handler
-  const handleGenerate = async (e?: React.FormEvent) => {
+  const handleGenerate = async (e) => {
     if (e) e.preventDefault();
     if (!clientName.trim() || !companyName.trim()) {
       triggerToast('Client Name and Company Name are required to generate an email.', 'error');
@@ -116,12 +107,12 @@ export const AIEmailGeneratorPage: React.FC = () => {
       setGeneratedSubject(result.subject);
       setGeneratedBody(result.body);
       triggerToast('Email content draft successfully compiled.', 'success');
-    } catch (err: any) {
+    } catch (err) {
       console.error(err);
       const errMsg = err.response?.data?.message || err.message || '';
       if (errMsg.includes('API key') || errMsg.includes('configured')) {
         setApiKeyWarning(errMsg);
-        triggerToast('Gemini API key configuration missing.', 'error');
+        triggerToast('Groq API key configuration missing.', 'error');
       } else {
         triggerToast(errMsg || 'Failed to generate email content. Please try again.', 'error');
       }
@@ -130,10 +121,9 @@ export const AIEmailGeneratorPage: React.FC = () => {
     }
   };
 
-  // Copy to Clipboard Handler
   const handleCopy = async () => {
     if (!generatedSubject || !generatedBody) return;
-    const fullText = `Subject: ${generatedSubject}\n\n${generatedBody}`;
+    const fullText = 'Subject: ' + generatedSubject + '\n\n' + generatedBody;
     try {
       await navigator.clipboard.writeText(fullText);
       setCopied(true);
@@ -144,7 +134,6 @@ export const AIEmailGeneratorPage: React.FC = () => {
     }
   };
 
-  // Save Generated Email to database
   const handleSave = async () => {
     if (!generatedSubject || !generatedBody) return;
     setSaving(true);
@@ -159,7 +148,6 @@ export const AIEmailGeneratorPage: React.FC = () => {
         body: generatedBody
       });
 
-      // Add to list and select it
       setHistory(prev => [savedEmail, ...prev]);
       setSelectedHistoryId(savedEmail.id);
       setSaved(true);
@@ -171,15 +159,13 @@ export const AIEmailGeneratorPage: React.FC = () => {
     }
   };
 
-  // Selecting an Item from history
-  const handleSelectHistoryItem = (email: AIEmail) => {
+  const handleSelectHistoryItem = (email) => {
     setSelectedHistoryId(email.id);
     setGeneratedSubject(email.subject);
     setGeneratedBody(email.body);
     setSaved(true);
     setIsEditing(false);
-    
-    // Fill back inputs for easy tweak or regeneration
+
     setClientName(email.clientName);
     setCompanyName(email.companyName);
     setEmailPurpose(email.emailPurpose);
@@ -188,26 +174,23 @@ export const AIEmailGeneratorPage: React.FC = () => {
     setApiKeyWarning(null);
   };
 
-  // Enter edit mode
   const handleStartEdit = () => {
     setEditSubject(generatedSubject);
     setEditBody(generatedBody);
     setIsEditing(true);
   };
 
-  // Discard edits
   const handleCancelEdit = () => {
     setIsEditing(false);
     setEditSubject('');
     setEditBody('');
   };
 
-  // Confirm edits — update displayed content and reset saved state
   const handleSaveEdit = () => {
     if (!editSubject.trim() && !editBody.trim()) return;
     setGeneratedSubject(editSubject);
     setGeneratedBody(editBody);
-    setSaved(false); // mark unsaved so user can re-save to CRM
+    setSaved(false);
     setIsEditing(false);
     triggerToast('Changes applied. Save to CRM to persist.', 'success');
   };
@@ -230,11 +213,11 @@ export const AIEmailGeneratorPage: React.FC = () => {
         <div className="eg-warning-card">
           <AlertTriangle className="eg-warning-card__icon" />
           <div>
-            <h4 className="eg-warning-card__title">Gemini API Configuration Missing</h4>
+            <h4 className="eg-warning-card__title">Groq API Configuration Missing</h4>
             <p className="eg-warning-card__text">
               The backend has encountered an authentication issue. To activate the email generation engine, configure a valid API key inside the root directory `.env` file and restart the server:
             </p>
-            <code className="eg-warning-card__code">GEMINI_API_KEY="AIzaSyYourKeyHere..."</code>
+            <code className="eg-warning-card__code">GROQ_API_KEY="gsk_yourKeyHere..."</code>
           </div>
         </div>
       )}
@@ -247,7 +230,7 @@ export const AIEmailGeneratorPage: React.FC = () => {
             <Inbox className="eg-card__title-icon" />
             Generation History
           </h3>
-          
+
           {loadingHistory ? (
             <p style={{ fontSize: '0.75rem', color: '#71717a' }}>Loading past records...</p>
           ) : history.length > 0 ? (
@@ -263,7 +246,7 @@ export const AIEmailGeneratorPage: React.FC = () => {
                 return (
                   <div
                     key={item.id}
-                    className={`eg-history-item ${isActive ? 'eg-history-item--active' : ''}`}
+                    className={'eg-history-item ' + (isActive ? 'eg-history-item--active' : '')}
                     onClick={() => handleSelectHistoryItem(item)}
                   >
                     <div className="eg-history-item__left">
@@ -331,7 +314,7 @@ export const AIEmailGeneratorPage: React.FC = () => {
                     <button
                       key={p.name}
                       type="button"
-                      className={`eg-purpose-btn ${isActive ? 'eg-purpose-btn--active' : ''}`}
+                      className={'eg-purpose-btn ' + (isActive ? 'eg-purpose-btn--active' : '')}
                       onClick={() => setEmailPurpose(p.name)}
                     >
                       <Icon className="eg-purpose-btn__icon" />
@@ -351,7 +334,7 @@ export const AIEmailGeneratorPage: React.FC = () => {
                     <button
                       key={t}
                       type="button"
-                      className={`eg-tone-btn ${isActive ? 'eg-tone-btn--active' : ''}`}
+                      className={'eg-tone-btn ' + (isActive ? 'eg-tone-btn--active' : '')}
                       onClick={() => setTone(t)}
                     >
                       {t}
@@ -383,7 +366,7 @@ export const AIEmailGeneratorPage: React.FC = () => {
         <div className="eg-card eg-card--output">
           <div className="eg-output-header">
             <h3 className="eg-card__title">Generated Output</h3>
-            
+
             {generatedSubject && generatedBody && !generating && (
               <div className="eg-output-actions">
                 {!isEditing && (
@@ -405,7 +388,7 @@ export const AIEmailGeneratorPage: React.FC = () => {
                     <button
                       type="button"
                       disabled={saving || saved}
-                      className={`eg-action-btn ${saved ? 'eg-action-btn--success' : 'eg-action-btn--primary'}`}
+                      className={'eg-action-btn ' + (saved ? 'eg-action-btn--success' : 'eg-action-btn--primary')}
                       onClick={handleSave}
                     >
                       <Save className="eg-action-btn__icon" />
@@ -416,7 +399,7 @@ export const AIEmailGeneratorPage: React.FC = () => {
                       <Pencil className="eg-action-btn__icon" />
                       Edit
                     </button>
-                    
+
                     <button type="button" className="eg-action-btn" onClick={() => handleGenerate()} title="Regenerate">
                       <RotateCw className="eg-action-btn__icon" />
                       Regenerate
@@ -428,7 +411,6 @@ export const AIEmailGeneratorPage: React.FC = () => {
           </div>
 
           {generating ? (
-            /* Skeleton Loader */
             <div className="eg-skeleton">
               <div className="eg-skeleton-bar eg-skeleton-bar--title" />
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '1rem' }}>
@@ -439,7 +421,6 @@ export const AIEmailGeneratorPage: React.FC = () => {
               </div>
             </div>
           ) : generatedSubject || generatedBody ? (
-            /* Draft Output — view or edit mode */
             <div className="eg-output-content">
               {isEditing ? (
                 <div className="eg-edit-box">
@@ -483,7 +464,6 @@ export const AIEmailGeneratorPage: React.FC = () => {
               )}
             </div>
           ) : (
-            /* Empty State */
             <div className="eg-empty-state">
               <Inbox className="eg-empty-state__icon" />
               <h4 className="eg-empty-state__title">No Draft Compiled Yet</h4>

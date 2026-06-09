@@ -6,21 +6,20 @@
 import React, { useState, useEffect } from 'react';
 import './TasksPage.css';
 import { taskService } from '../../services/api';
-import { Task, TaskPriority, TaskStatus } from '../../types';
 import { Dialog } from '../../components/common/Dialog';
 import { TaskForm } from '../../components/forms/TaskForm';
-import { Toast, ToastType } from '../../components/common/Toast';
+import { Toast } from '../../components/common/Toast';
 import { Plus, Calendar, CheckCircle, Clock, Edit, Trash2, CheckSquare, Square, Inbox, AlertCircle } from 'lucide-react';
 
-export const TasksPage: React.FC = () => {
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [filterStatus, setFilterStatus] = useState<string>('All');
-  const [isCreateOpen, setIsCreateOpen] = useState<boolean>(false);
-  const [editingTask, setEditingTask] = useState<Task | null>(null);
-  const [toastMsg, setToastMsg] = useState<string | null>(null);
-  const [toastType, setToastType] = useState<ToastType>('success');
-  const [syncing, setSyncing] = useState<boolean>(false);
+export const TasksPage = () => {
+  const [tasks, setTasks] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [filterStatus, setFilterStatus] = useState('All');
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState(null);
+  const [toastMsg, setToastMsg] = useState(null);
+  const [toastType, setToastType] = useState('success');
+  const [syncing, setSyncing] = useState(false);
 
   const fetchTasks = async () => {
     try {
@@ -36,9 +35,9 @@ export const TasksPage: React.FC = () => {
 
   useEffect(() => { fetchTasks(); }, [filterStatus]);
 
-  const triggerToast = (msg: string, type: ToastType) => { setToastMsg(msg); setToastType(type); };
+  const triggerToast = (msg, type) => { setToastMsg(msg); setToastType(type); };
 
-  const handleCreateSubmit = async (data: Omit<Task, 'id' | 'createdAt'>) => {
+  const handleCreateSubmit = async (data) => {
     setSyncing(true);
     try {
       await taskService.create(data);
@@ -49,7 +48,7 @@ export const TasksPage: React.FC = () => {
     finally { setSyncing(false); }
   };
 
-  const handleEditSubmit = async (data: Omit<Task, 'id' | 'createdAt'>) => {
+  const handleEditSubmit = async (data) => {
     if (!editingTask) return;
     setSyncing(true);
     try {
@@ -61,7 +60,7 @@ export const TasksPage: React.FC = () => {
     finally { setSyncing(false); }
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (id) => {
     if (!window.confirm('Delete this task?')) return;
     try {
       await taskService.delete(id);
@@ -70,22 +69,22 @@ export const TasksPage: React.FC = () => {
     } catch { triggerToast('Failed to delete task.', 'error'); }
   };
 
-  const toggleComplete = async (task: Task) => {
+  const toggleComplete = async (task) => {
     try {
-      const nextStatus: TaskStatus = task.status === 'Completed' ? 'Pending' : 'Completed';
+      const nextStatus = task.status === 'Completed' ? 'Pending' : 'Completed';
       await taskService.update(task.id, { title: task.title, description: task.description, priority: task.priority, dueDate: task.dueDate, status: nextStatus });
       triggerToast(nextStatus === 'Completed' ? 'Task marked complete!' : 'Task returned to queue.', 'success');
       fetchTasks();
     } catch { triggerToast('Failed to update status.', 'error'); }
   };
 
-  const priorityModMap: Record<TaskPriority, string> = {
+  const priorityModMap = {
     High: 'tp-card__priority--high',
     Medium: 'tp-card__priority--medium',
     Low: 'tp-card__priority--low',
   };
 
-  const getStatusIcon = (status: TaskStatus) => {
+  const getStatusIcon = (status) => {
     if (status === 'Completed')  return <CheckCircle className="tp-status-icon--done"     style={{ width: '0.875rem', height: '0.875rem' }} />;
     if (status === 'In Progress')return <Clock       className="tp-status-icon--progress" style={{ width: '0.875rem', height: '0.875rem' }} />;
     return                               <AlertCircle className="tp-status-icon--pending"  style={{ width: '0.875rem', height: '0.875rem' }} />;
@@ -114,7 +113,7 @@ export const TasksPage: React.FC = () => {
         {STATUS_TABS.map((st) => (
           <button
             key={st}
-            className={`tp-filter-tab ${filterStatus === st ? 'tp-filter-tab--active' : ''}`}
+            className={'tp-filter-tab ' + (filterStatus === st ? 'tp-filter-tab--active' : '')}
             onClick={() => setFilterStatus(st)}
           >
             {st} Tasks
@@ -135,9 +134,9 @@ export const TasksPage: React.FC = () => {
           {tasks.map((task) => {
             const done = task.status === 'Completed';
             return (
-              <div key={task.id} className={`tp-card ${done ? 'tp-card--completed' : ''}`}>
+              <div key={task.id} className={'tp-card ' + (done ? 'tp-card--completed' : '')}>
                 <button
-                  className={`tp-card__checkbox ${done ? 'tp-card__checkbox--done' : ''}`}
+                  className={'tp-card__checkbox ' + (done ? 'tp-card__checkbox--done' : '')}
                   onClick={() => toggleComplete(task)}
                   title={done ? 'Mark incomplete' : 'Mark complete'}
                 >
@@ -150,15 +149,15 @@ export const TasksPage: React.FC = () => {
                 <div className="tp-card__body">
                   <div>
                     <div className="tp-card__tags">
-                      <span className={`tp-card__priority ${priorityModMap[task.priority]}`}>{task.priority}</span>
+                      <span className={'tp-card__priority ' + priorityModMap[task.priority]}>{task.priority}</span>
                       <span className="tp-card__status-tag">
                         {getStatusIcon(task.status)}
                         {task.status}
                       </span>
                     </div>
-                    <h3 className={`tp-card__title ${done ? 'tp-card__title--done' : ''}`}>{task.title}</h3>
+                    <h3 className={'tp-card__title ' + (done ? 'tp-card__title--done' : '')}>{task.title}</h3>
                     {task.description && (
-                      <p className={`tp-card__desc ${done ? 'tp-card__desc--done' : ''}`}>{task.description}</p>
+                      <p className={'tp-card__desc ' + (done ? 'tp-card__desc--done' : '')}>{task.description}</p>
                     )}
                   </div>
                   <div className="tp-card__footer">

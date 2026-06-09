@@ -3,11 +3,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Router, Response } from 'express';
-import { db } from '../db';
-import { hashPassword, comparePassword, generateToken } from '../utils/crypto';
-import { authMiddleware, AuthenticatedRequest } from '../middleware/auth';
-import { PipelineStage, LeadStatus, ClientStatus, TaskStatus, TaskPriority, Pipeline } from '../../../frontend/src/types';
+import { Router } from 'express';
+import { db } from '../db.js';
+import { hashPassword, comparePassword, generateToken } from '../utils/crypto.js';
+import { authMiddleware } from '../middleware/auth.js';
 
 const router = Router();
 
@@ -31,7 +30,7 @@ router.post('/auth/register', async (req, res) => {
 
     const hashedPassword = hashPassword(password);
     const newUser = await db.users.create({
-      id: `user-${Date.now()}`,
+      id: 'user-' + Date.now(),
       name,
       email: email.toLowerCase(),
       password: hashedPassword,
@@ -78,7 +77,7 @@ router.post('/auth/login', async (req, res) => {
   }
 });
 
-router.get('/auth/me', authMiddleware, (req: AuthenticatedRequest, res) => {
+router.get('/auth/me', authMiddleware, (req, res) => {
   if (!req.user) {
     res.status(401).json({ message: 'Unauthorized' });
     return;
@@ -94,14 +93,14 @@ router.get('/auth/me', authMiddleware, (req: AuthenticatedRequest, res) => {
 router.get('/clients', authMiddleware, async (req, res) => {
   try {
     let clients = await db.clients.findMany();
-    const search = req.query.search as string;
-    const status = req.query.status as string;
+    const search = req.query.search;
+    const status = req.query.status;
 
     if (search) {
       const q = search.toLowerCase();
-      clients = clients.filter(c => 
-        c.name.toLowerCase().includes(q) || 
-        c.company.toLowerCase().includes(q) || 
+      clients = clients.filter(c =>
+        c.name.toLowerCase().includes(q) ||
+        c.company.toLowerCase().includes(q) ||
         c.email.toLowerCase().includes(q)
       );
     }
@@ -129,7 +128,7 @@ router.post('/clients', authMiddleware, async (req, res) => {
       company,
       email,
       phone: phone || '',
-      status: (status as ClientStatus) || 'Pending',
+      status: status || 'Pending',
       notes: notes || ''
     });
 
@@ -154,7 +153,7 @@ router.put('/clients/:id', authMiddleware, async (req, res) => {
       company,
       email,
       phone,
-      status: status as ClientStatus,
+      status,
       notes
     });
 
@@ -182,13 +181,13 @@ router.delete('/clients/:id', authMiddleware, async (req, res) => {
 router.get('/leads', authMiddleware, async (req, res) => {
   try {
     let leads = await db.leads.findMany();
-    const search = req.query.search as string;
-    const status = req.query.status as string;
+    const search = req.query.search;
+    const status = req.query.status;
 
     if (search) {
       const q = search.toLowerCase();
-      leads = leads.filter(l => 
-        l.name.toLowerCase().includes(q) || 
+      leads = leads.filter(l =>
+        l.name.toLowerCase().includes(q) ||
         l.email.toLowerCase().includes(q)
       );
     }
@@ -218,7 +217,7 @@ router.post('/leads', authMiddleware, async (req, res) => {
       phone: phone || '',
       source: source || 'Other',
       leadScore: Math.min(100, Math.max(0, score)),
-      status: (status as LeadStatus) || 'New'
+      status: status || 'New'
     });
 
     res.status(201).json(lead);
@@ -245,7 +244,7 @@ router.put('/leads/:id', authMiddleware, async (req, res) => {
       phone,
       source,
       leadScore: Math.min(100, Math.max(0, score)),
-      status: status as LeadStatus
+      status
     });
 
     res.json(updatedLead);
@@ -272,7 +271,7 @@ router.delete('/leads/:id', authMiddleware, async (req, res) => {
 router.get('/tasks', authMiddleware, async (req, res) => {
   try {
     let tasks = await db.tasks.findMany();
-    const status = req.query.status as string;
+    const status = req.query.status;
 
     if (status && status !== 'All') {
       tasks = tasks.filter(t => t.status === status);
@@ -295,9 +294,9 @@ router.post('/tasks', authMiddleware, async (req, res) => {
     const task = await db.tasks.create({
       title,
       description: description || '',
-      priority: (priority as TaskPriority) || 'Medium',
+      priority: priority || 'Medium',
       dueDate,
-      status: (status as TaskStatus) || 'Pending'
+      status: status || 'Pending'
     });
 
     res.status(201).json(task);
@@ -319,9 +318,9 @@ router.put('/tasks/:id', authMiddleware, async (req, res) => {
     const updatedTask = await db.tasks.update(id, {
       title,
       description,
-      priority: priority as TaskPriority,
+      priority,
       dueDate,
-      status: status as TaskStatus
+      status
     });
 
     res.json(updatedTask);
@@ -366,7 +365,7 @@ router.post('/pipelines', authMiddleware, async (req, res) => {
     const pipelineDeal = await db.pipelines.create({
       title,
       value: numericValue,
-      stage: (stage as PipelineStage) || 'New Lead'
+      stage: stage || 'New Lead'
     });
 
     res.status(201).json(pipelineDeal);
@@ -385,10 +384,10 @@ router.put('/pipelines/:id', authMiddleware, async (req, res) => {
     }
 
     const { title, value, stage } = req.body;
-    const updatedPayload: Partial<Pipeline> = {};
+    const updatedPayload = {};
     if (title !== undefined) updatedPayload.title = title;
     if (value !== undefined) updatedPayload.value = parseFloat(value) || 0;
-    if (stage !== undefined) updatedPayload.stage = stage as PipelineStage;
+    if (stage !== undefined) updatedPayload.stage = stage;
 
     const updatedDeal = await db.pipelines.update(id, updatedPayload);
     res.json(updatedDeal);
@@ -421,21 +420,16 @@ router.get('/dashboard/stats', authMiddleware, async (req, res) => {
 
     const totalClients = clients.length;
     const totalLeads = leads.length;
-    const totalTasks = tasks.filter(t => t.status !== 'Completed').length; // Active tasks
+    const totalTasks = tasks.filter(t => t.status !== 'Completed').length;
 
-    // Revenue = sum of won deals in pipeline
     const wonDeals = pipelines.filter(p => p.stage === 'Won');
     const revenue = wonDeals.reduce((sum, p) => sum + p.value, 0);
 
-    // Group wins into months dynamically to support recharts cleanly
-    // If no won cases exist, generate elegant default month records for visuals
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    
-    // Group monthly
-    const monthlyWinsMap: Record<string, number> = {};
+
+    const monthlyWinsMap = {};
     months.forEach(m => { monthlyWinsMap[m] = 0; });
 
-    // Set stable bases so dashboard has lovely visual depth
     monthlyWinsMap['Jan'] = 15000;
     monthlyWinsMap['Feb'] = 24000;
     monthlyWinsMap['Mar'] = 35000;
@@ -443,7 +437,6 @@ router.get('/dashboard/stats', authMiddleware, async (req, res) => {
     monthlyWinsMap['May'] = 68000;
     monthlyWinsMap['Jun'] = 85000;
 
-    // Dynamically calculate actual totals from Won deals
     wonDeals.forEach(deal => {
       try {
         const date = new Date(deal.createdAt);
@@ -459,8 +452,7 @@ router.get('/dashboard/stats', authMiddleware, async (req, res) => {
       amount: monthlyWinsMap[m]
     }));
 
-    // Lead stage distribution to show Conversion metrics
-    const leadCountMap: Record<string, number> = {
+    const leadCountMap = {
       'New': 0,
       'Contacted': 0,
       'Qualified': 0,
@@ -475,7 +467,6 @@ router.get('/dashboard/stats', authMiddleware, async (req, res) => {
       }
     });
 
-    // Support baseline dynamic fallback
     if (leads.length === 0) {
       leadCountMap['New'] = 5;
       leadCountMap['Contacted'] = 8;
@@ -485,7 +476,7 @@ router.get('/dashboard/stats', authMiddleware, async (req, res) => {
 
     const leadConversion = Object.keys(leadCountMap).map(key => ({
       name: key,
-      value: leadCountMap[key] || 1 // Avoid completely empty slice for premium look
+      value: leadCountMap[key] || 1
     }));
 
     res.json({
@@ -505,7 +496,7 @@ router.get('/dashboard/stats', authMiddleware, async (req, res) => {
 // AI EMAIL GENERATOR ROUTER
 // =====================================================
 
-import { generateEmail } from '../services/openrouter';
+import { generateEmail } from '../services/groq.js';
 
 router.post('/ai/generate', authMiddleware, async (req, res) => {
   try {
@@ -524,7 +515,7 @@ router.post('/ai/generate', authMiddleware, async (req, res) => {
     });
 
     res.json(generated);
-  } catch (err: any) {
+  } catch (err) {
     console.error('Error generating email with Gemini:', err);
     res.status(500).json({ message: err.message || 'Failed to generate email with Gemini.' });
   }

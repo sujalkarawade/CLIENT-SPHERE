@@ -5,25 +5,8 @@
 
 import React from 'react';
 import { useForm } from 'react-hook-form';
-import { Client, ClientStatus } from '../../types';
 
-interface ClientFormProps {
-  initialData?: Client;
-  onSubmit: (data: Omit<Client, 'id' | 'createdAt'>) => void;
-  onCancel: () => void;
-  isSubmitting?: boolean;
-}
-
-interface FormInputs {
-  name: string;
-  company: string;
-  email: string;
-  phone: string;
-  status: ClientStatus;
-  notes: string;
-}
-
-export const ClientForm: React.FC<ClientFormProps> = ({
+export const ClientForm = ({
   initialData,
   onSubmit,
   onCancel,
@@ -33,7 +16,7 @@ export const ClientForm: React.FC<ClientFormProps> = ({
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<FormInputs>({
+  } = useForm({
     defaultValues: {
       name: initialData?.name || '',
       company: initialData?.company || '',
@@ -53,11 +36,11 @@ export const ClientForm: React.FC<ClientFormProps> = ({
         <input
           type="text"
           placeholder="e.g. John Doe"
-          className={`w-full bg-[#131622] rounded-lg border px-3.5 py-2 text-sm text-white focus:outline-none focus:ring-1 transition duration-150 ${
-            errors.name
+          className={'w-full bg-[#131622] rounded-lg border px-3.5 py-2 text-sm text-white focus:outline-none focus:ring-1 transition duration-150 ' +
+            (errors.name
               ? 'border-rose-500/50 focus:ring-rose-500'
-              : 'border-gray-800 focus:border-indigo-500 focus:ring-indigo-500'
-          }`}
+              : 'border-gray-800 focus:border-indigo-500 focus:ring-indigo-500')
+          }
           {...register('name', { required: 'Contact name is required' })}
         />
         {errors.name && <p className="mt-1 text-xs text-rose-400 font-medium">{errors.name.message}</p>}
@@ -70,11 +53,11 @@ export const ClientForm: React.FC<ClientFormProps> = ({
         <input
           type="text"
           placeholder="e.g. Acme Corp"
-          className={`w-full bg-[#131622] rounded-lg border px-3.5 py-2 text-sm text-white focus:outline-none focus:ring-1 transition duration-150 ${
-            errors.company
+          className={'w-full bg-[#131622] rounded-lg border px-3.5 py-2 text-sm text-white focus:outline-none focus:ring-1 transition duration-150 ' +
+            (errors.company
               ? 'border-rose-500/50 focus:ring-rose-500'
-              : 'border-gray-800 focus:border-indigo-500 focus:ring-indigo-500'
-          }`}
+              : 'border-gray-800 focus:border-indigo-500 focus:ring-indigo-500')
+          }
           {...register('company', { required: 'Company name is required' })}
         />
         {errors.company && (
@@ -90,11 +73,11 @@ export const ClientForm: React.FC<ClientFormProps> = ({
           <input
             type="email"
             placeholder="john@company.com"
-            className={`w-full bg-[#131622] rounded-lg border px-3.5 py-2 text-sm text-white focus:outline-none focus:ring-1 transition duration-150 ${
-              errors.email
+            className={'w-full bg-[#131622] rounded-lg border px-3.5 py-2 text-sm text-white focus:outline-none focus:ring-1 transition duration-150 ' +
+              (errors.email
                 ? 'border-rose-500/50 focus:ring-rose-500'
-                : 'border-gray-800 focus:border-indigo-500 focus:ring-indigo-500'
-            }`}
+                : 'border-gray-800 focus:border-indigo-500 focus:ring-indigo-500')
+            }
             {...register('email', {
               required: 'Email coordinates are vital',
               pattern: { value: /^\S+@\S+$/i, message: 'Please input a valid email formatting' },

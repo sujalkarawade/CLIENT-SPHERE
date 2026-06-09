@@ -5,27 +5,11 @@
 
 import React from 'react';
 import { useForm } from 'react-hook-form';
-import { Task, TaskPriority, TaskStatus } from '../../types';
 
-interface TaskFormProps {
-  initialData?: Task;
-  onSubmit: (data: Omit<Task, 'id' | 'createdAt'>) => void;
-  onCancel: () => void;
-  isSubmitting?: boolean;
-}
+const PRIORITIES = ['Low', 'Medium', 'High'];
+const STATUSES = ['Pending', 'In Progress', 'Completed'];
 
-interface FormInputs {
-  title: string;
-  description: string;
-  priority: TaskPriority;
-  dueDate: string;
-  status: TaskStatus;
-}
-
-const PRIORITIES: TaskPriority[] = ['Low', 'Medium', 'High'];
-const STATUSES: TaskStatus[] = ['Pending', 'In Progress', 'Completed'];
-
-export const TaskForm: React.FC<TaskFormProps> = ({
+export const TaskForm = ({
   initialData,
   onSubmit,
   onCancel,
@@ -35,7 +19,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<FormInputs>({
+  } = useForm({
     defaultValues: {
       title: initialData?.title || '',
       description: initialData?.description || '',
@@ -54,11 +38,11 @@ export const TaskForm: React.FC<TaskFormProps> = ({
         <input
           type="text"
           placeholder="e.g. Schedule Stark industries sync"
-          className={`w-full bg-[#18181b] rounded border px-3 py-1.5 text-xs text-white focus:outline-none focus:border-zinc-500 transition-colors ${
-            errors.title
+          className={'w-full bg-[#18181b] rounded border px-3 py-1.5 text-xs text-white focus:outline-none focus:border-zinc-500 transition-colors ' +
+            (errors.title
               ? 'border-rose-500/50'
-              : 'border-[#27272a]'
-          }`}
+              : 'border-[#27272a]')
+          }
           {...register('title', { required: 'Task title is required' })}
         />
         {errors.title && <p className="mt-1 text-xs text-rose-455 font-medium">{errors.title.message}</p>}
@@ -70,11 +54,11 @@ export const TaskForm: React.FC<TaskFormProps> = ({
         </label>
         <input
           type="date"
-          className={`w-full bg-[#18181b] rounded border px-3 py-1.5 text-xs text-white focus:outline-none focus:border-zinc-500 transition-colors ${
-            errors.dueDate
+          className={'w-full bg-[#18181b] rounded border px-3 py-1.5 text-xs text-white focus:outline-none focus:border-zinc-500 transition-colors ' +
+            (errors.dueDate
               ? 'border-rose-500/50'
-              : 'border-[#27272a]'
-          }`}
+              : 'border-[#27272a]')
+          }
           {...register('dueDate', { required: 'Due date is mandatory' })}
         />
         {errors.dueDate && (

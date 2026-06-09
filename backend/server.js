@@ -3,11 +3,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import './load-env';
+import './load-env.js';
 import path from 'path';
 import express from 'express';
 import { createServer as createViteServer } from 'vite';
-import { apiRouter } from './server/routes/api';
+import { apiRouter } from './server/routes/api.js';
 
 async function startServer() {
   const app = express();

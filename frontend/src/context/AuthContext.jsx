@@ -4,34 +4,21 @@
  */
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { User } from '../types';
-import { authService } from '../services/api';
 
-interface AuthContextType {
-  user: User | null;
-  loading: boolean;
-  token: string | null;
-  error: string | null;
-  login: (email: string, password: string) => Promise<void>;
-  register: (name: string, email: string, password: string) => Promise<void>;
-  logout: () => void;
-  clearError: () => void;
-}
+const AuthContext = createContext(undefined);
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const defaultUser: User = {
+export const AuthProvider = ({ children }) => {
+  const defaultUser = {
     id: 'user-default-1',
     name: 'Sujal Karawade',
     email: 'sujalkarawade18@gmail.com',
     createdAt: new Date('2026-01-15T09:00:00Z').toISOString()
   };
 
-  const [user] = useState<User | null>(defaultUser);
-  const [token] = useState<string | null>('bypass-auth-token');
-  const [loading] = useState<boolean>(false);
-  const [error] = useState<string | null>(null);
+  const [user] = useState(defaultUser);
+  const [token] = useState('bypass-auth-token');
+  const [loading] = useState(false);
+  const [error] = useState(null);
 
   useEffect(() => {
     // Auth bypass: always authenticated

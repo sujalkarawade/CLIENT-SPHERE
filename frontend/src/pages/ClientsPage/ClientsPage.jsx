@@ -6,22 +6,21 @@
 import React, { useState, useEffect } from 'react';
 import './ClientsPage.css';
 import { clientService } from '../../services/api';
-import { Client, ClientStatus } from '../../types';
 import { Dialog } from '../../components/common/Dialog';
 import { ClientForm } from '../../components/forms/ClientForm';
-import { Toast, ToastType } from '../../components/common/Toast';
+import { Toast } from '../../components/common/Toast';
 import { Search, Plus, Mail, Phone, Building, Edit, Trash2, Filter, Inbox } from 'lucide-react';
 
-export const ClientsPage: React.FC = () => {
-  const [clients, setClients] = useState<Client[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [searchQuery, setSearchQuery] = useState<string>('');
-  const [filterStatus, setFilterStatus] = useState<string>('All');
-  const [isCreateOpen, setIsCreateOpen] = useState<boolean>(false);
-  const [editingClient, setEditingClient] = useState<Client | null>(null);
-  const [toastMsg, setToastMsg] = useState<string | null>(null);
-  const [toastType, setToastType] = useState<ToastType>('success');
-  const [syncing, setSyncing] = useState<boolean>(false);
+export const ClientsPage = () => {
+  const [clients, setClients] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterStatus, setFilterStatus] = useState('All');
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [editingClient, setEditingClient] = useState(null);
+  const [toastMsg, setToastMsg] = useState(null);
+  const [toastType, setToastType] = useState('success');
+  const [syncing, setSyncing] = useState(false);
 
   const fetchClients = async () => {
     try {
@@ -40,12 +39,12 @@ export const ClientsPage: React.FC = () => {
 
   useEffect(() => { fetchClients(); }, [searchQuery, filterStatus]);
 
-  const triggerToast = (msg: string, type: ToastType) => {
+  const triggerToast = (msg, type) => {
     setToastMsg(msg);
     setToastType(type);
   };
 
-  const handleCreateSubmit = async (data: Omit<Client, 'id' | 'createdAt'>) => {
+  const handleCreateSubmit = async (data) => {
     setSyncing(true);
     try {
       await clientService.create(data);
@@ -59,7 +58,7 @@ export const ClientsPage: React.FC = () => {
     }
   };
 
-  const handleEditSubmit = async (data: Omit<Client, 'id' | 'createdAt'>) => {
+  const handleEditSubmit = async (data) => {
     if (!editingClient) return;
     setSyncing(true);
     try {
@@ -74,7 +73,7 @@ export const ClientsPage: React.FC = () => {
     }
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (id) => {
     if (!window.confirm('Are you absolutely sure you want to delete this client?')) return;
     try {
       await clientService.delete(id);
@@ -85,19 +84,19 @@ export const ClientsPage: React.FC = () => {
     }
   };
 
-  const getStatusBadge = (status: ClientStatus) => {
-    const modMap: Record<ClientStatus, string> = {
+  const getStatusBadge = (status) => {
+    const modMap = {
       Active: 'cp-badge--active',
       Pending: 'cp-badge--pending',
       Inactive: 'cp-badge--inactive',
     };
-    const dotMap: Record<ClientStatus, string> = {
+    const dotMap = {
       Active: 'cp-badge__dot cp-badge__dot--active',
       Pending: 'cp-badge__dot cp-badge__dot--pending',
       Inactive: 'cp-badge__dot cp-badge__dot--inactive',
     };
     return (
-      <span className={`cp-badge ${modMap[status]}`}>
+      <span className={'cp-badge ' + modMap[status]}>
         <span className={dotMap[status]} />
         {status}
       </span>
@@ -199,7 +198,7 @@ export const ClientsPage: React.FC = () => {
                   </td>
                   <td>{getStatusBadge(client.status)}</td>
                   <td className="hide-lg">
-                    <p className="col-notes" title={client.notes}>{client.notes || '—'}</p>
+                    <p className="col-notes" title={client.notes}>{client.notes || '\u2014'}</p>
                   </td>
                   <td className="col-actions">
                     <div className="col-actions-inner">

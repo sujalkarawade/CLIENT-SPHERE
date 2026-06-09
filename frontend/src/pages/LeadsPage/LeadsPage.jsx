@@ -6,22 +6,21 @@
 import React, { useState, useEffect } from 'react';
 import './LeadsPage.css';
 import { leadService } from '../../services/api';
-import { Lead, LeadStatus, LeadSource } from '../../types';
 import { Dialog } from '../../components/common/Dialog';
 import { LeadForm } from '../../components/forms/LeadForm';
-import { Toast, ToastType } from '../../components/common/Toast';
+import { Toast } from '../../components/common/Toast';
 import { Search, Plus, Mail, Phone, Edit, Trash2, Filter, Globe, Users2, Sparkles, Inbox } from 'lucide-react';
 
-export const LeadsPage: React.FC = () => {
-  const [leads, setLeads] = useState<Lead[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [searchQuery, setSearchQuery] = useState<string>('');
-  const [filterStatus, setFilterStatus] = useState<string>('All');
-  const [isCreateOpen, setIsCreateOpen] = useState<boolean>(false);
-  const [editingLead, setEditingLead] = useState<Lead | null>(null);
-  const [toastMsg, setToastMsg] = useState<string | null>(null);
-  const [toastType, setToastType] = useState<ToastType>('success');
-  const [syncing, setSyncing] = useState<boolean>(false);
+export const LeadsPage = () => {
+  const [leads, setLeads] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterStatus, setFilterStatus] = useState('All');
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [editingLead, setEditingLead] = useState(null);
+  const [toastMsg, setToastMsg] = useState(null);
+  const [toastType, setToastType] = useState('success');
+  const [syncing, setSyncing] = useState(false);
 
   const fetchLeads = async () => {
     try {
@@ -37,9 +36,9 @@ export const LeadsPage: React.FC = () => {
 
   useEffect(() => { fetchLeads(); }, [searchQuery, filterStatus]);
 
-  const triggerToast = (msg: string, type: ToastType) => { setToastMsg(msg); setToastType(type); };
+  const triggerToast = (msg, type) => { setToastMsg(msg); setToastType(type); };
 
-  const handleCreateSubmit = async (data: Omit<Lead, 'id' | 'createdAt'>) => {
+  const handleCreateSubmit = async (data) => {
     setSyncing(true);
     try {
       await leadService.create(data);
@@ -50,7 +49,7 @@ export const LeadsPage: React.FC = () => {
     finally { setSyncing(false); }
   };
 
-  const handleEditSubmit = async (data: Omit<Lead, 'id' | 'createdAt'>) => {
+  const handleEditSubmit = async (data) => {
     if (!editingLead) return;
     setSyncing(true);
     try {
@@ -62,7 +61,7 @@ export const LeadsPage: React.FC = () => {
     finally { setSyncing(false); }
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (id) => {
     if (!window.confirm('Delete this lead opportunity?')) return;
     try {
       await leadService.delete(id);
@@ -71,29 +70,29 @@ export const LeadsPage: React.FC = () => {
     } catch { triggerToast('Failed to delete lead.', 'error'); }
   };
 
-  const getSourceIcon = (source: LeadSource) => {
+  const getSourceIcon = (source) => {
     if (source === 'Website') return <Globe style={{ width: '0.875rem', height: '0.875rem' }} />;
     if (source === 'Referral') return <Users2 style={{ width: '0.875rem', height: '0.875rem' }} />;
     return <Sparkles style={{ width: '0.875rem', height: '0.875rem' }} />;
   };
 
-  const statusModMap: Record<LeadStatus, string> = {
+  const statusModMap = {
     New: 'lp-badge--new', Contacted: 'lp-badge--contacted', Qualified: 'lp-badge--qualified',
     Proposal: 'lp-badge--proposal', Nurturing: 'lp-badge--nurturing', Unqualified: 'lp-badge--unqualified',
   };
 
-  const getScoreMeter = (score: number) => {
+  const getScoreMeter = (score) => {
     const isHot = score >= 80, isWarm = score >= 50;
     const mod = isHot ? 'hot' : isWarm ? 'warm' : 'cold';
     const label = isHot ? 'Hot' : isWarm ? 'Warm' : 'Cold';
     return (
       <div className="lp-score">
         <div className="lp-score__labels">
-          <span className={`lp-score__label--${mod}`}>{label}</span>
+          <span className={'lp-score__label--' + mod}>{label}</span>
           <span className="lp-score__number">{score}/100</span>
         </div>
         <div className="lp-score__track">
-          <div className={`lp-score__fill lp-score__fill--${mod}`} style={{ width: `${score}%` }} />
+          <div className={'lp-score__fill lp-score__fill--' + mod} style={{ width: score + '%' }} />
         </div>
       </div>
     );
@@ -189,7 +188,7 @@ export const LeadsPage: React.FC = () => {
                     </span>
                   </td>
                   <td>
-                    <span className={`lp-badge ${statusModMap[lead.status]}`}>{lead.status}</span>
+                    <span className={'lp-badge ' + statusModMap[lead.status]}>{lead.status}</span>
                   </td>
                   <td>{getScoreMeter(lead.leadScore)}</td>
                   <td className="col-actions">

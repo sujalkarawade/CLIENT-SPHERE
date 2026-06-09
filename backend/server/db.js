@@ -4,19 +4,18 @@
  */
 
 import { Pool } from 'pg';
-import { User, Client, Lead, Task, Pipeline, AIEmail } from '../../frontend/src/types';
 
-const DEFAULT_USERS: User[] = [
+const DEFAULT_USERS = [
   {
     id: 'user-default-1',
     name: 'Sujal Karawade',
     email: 'sujalkarawade18@gmail.com',
-    password: '$2a$10$Uq6q3fK/R72CAs6pE7vI1OCY4fH/v6Z3t.vR/9s8N8NIsG1G6rZ3S', // Default encrypted password 'password123'
+    password: '$2a$10$Uq6q3fK/R72CAs6pE7vI1OCY4fH/v6Z3t.vR/9s8N8NIsG1G6rZ3S',
     createdAt: new Date('2026-01-15T09:00:00Z').toISOString(),
   }
 ];
 
-const DEFAULT_CLIENTS: Client[] = [
+const DEFAULT_CLIENTS = [
   {
     id: 'client-1',
     name: 'Sarah Connor',
@@ -59,7 +58,7 @@ const DEFAULT_CLIENTS: Client[] = [
   }
 ];
 
-const DEFAULT_LEADS: Lead[] = [
+const DEFAULT_LEADS = [
   {
     id: 'lead-1',
     name: 'Clark Kent',
@@ -112,7 +111,7 @@ const DEFAULT_LEADS: Lead[] = [
   }
 ];
 
-const DEFAULT_TASKS: Task[] = [
+const DEFAULT_TASKS = [
   {
     id: 'task-1',
     title: 'Review Star Industries contract notes',
@@ -151,7 +150,7 @@ const DEFAULT_TASKS: Task[] = [
   }
 ];
 
-const DEFAULT_PIPELINES: Pipeline[] = [
+const DEFAULT_PIPELINES = [
   {
     id: 'deal-1',
     title: 'Acme Security Upgrade',
@@ -196,7 +195,7 @@ const DEFAULT_PIPELINES: Pipeline[] = [
   }
 ];
 
-const DEFAULT_AI_EMAILS: AIEmail[] = [
+const DEFAULT_AI_EMAILS = [
   {
     id: 'email-default-1',
     clientName: 'Tony Stark',
@@ -216,18 +215,15 @@ const DEFAULT_AI_EMAILS: AIEmail[] = [
     tone: 'Formal',
     additionalContext: 'Proposal for enterprise cloud migration services.',
     subject: 'Proposal: Enterprise Cloud Migration Services',
-    body: 'Dear Sarah,\n\nIt was a pleasure speaking with you regarding SkyNet Solutions\' cloud migration requirements. Please find attached our comprehensive proposal outlining the project scope, timeline, and deliverables for the migration services.\n\nWe believe this solution will significantly improve your system redundancy and security. Please let me know if you would like to schedule a walkthrough of the proposal details.\n\nSincerely,\nSujal Karawade',
+    body: "Dear Sarah,\n\nIt was a pleasure speaking with you regarding SkyNet Solutions' cloud migration requirements. Please find attached our comprehensive proposal outlining the project scope, timeline, and deliverables for the migration services.\n\nWe believe this solution will significantly improve your system redundancy and security. Please let me know if you would like to schedule a walkthrough of the proposal details.\n\nSincerely,\nSujal Karawade",
     createdAt: new Date('2026-06-08T09:15:00Z').toISOString(),
   }
 ];
 
 class Database {
-  private pool: Pool;
-  private initializedPromise: Promise<void>;
-
   constructor() {
     const connectionString = process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/clientsphere';
-    
+
     try {
       const parsedUrl = new URL(connectionString);
       this.pool = new Pool({
@@ -238,36 +234,34 @@ class Database {
         database: parsedUrl.pathname.slice(1) || 'clientsphere',
       });
     } catch (e) {
-      // Fallback if URL parsing fails for some reason
       this.pool = new Pool({ connectionString });
     }
-    
+
     this.initializedPromise = this.init();
   }
 
-  private async init() {
+  async init() {
     const connectionString = process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/clientsphere';
     try {
-      // Test connection
       await this.pool.query('SELECT 1');
-    } catch (err: any) {
+    } catch (err) {
       if (err.code === '3D000') {
         console.log('Database does not exist. Attempting to create database automatically...');
         try {
           const parsedUrl = new URL(connectionString);
           const dbName = parsedUrl.pathname.slice(1);
-          
+
           const adminPool = new Pool({
             user: decodeURIComponent(parsedUrl.username),
             password: decodeURIComponent(parsedUrl.password),
             host: parsedUrl.hostname,
             port: parseInt(parsedUrl.port || '5432', 10),
-            database: 'postgres' // Connect to default database
+            database: 'postgres'
           });
-          
-          await adminPool.query(`CREATE DATABASE "${dbName}"`);
+
+          await adminPool.query('CREATE DATABASE "' + dbName + '"');
           await adminPool.end();
-          console.log(`Database "${dbName}" created successfully.`);
+          console.log('Database "' + dbName + '" created successfully.');
         } catch (createErr) {
           console.error('Failed to automatically create database:', createErr);
         }
@@ -277,80 +271,52 @@ class Database {
     }
 
     try {
-      // Create tables if they do not exist
-      await this.pool.query(`
-        CREATE TABLE IF NOT EXISTS users (
-          "id" TEXT PRIMARY KEY,
-          "name" TEXT NOT NULL,
-          "email" TEXT UNIQUE NOT NULL,
-          "password" TEXT NOT NULL,
-          "createdAt" TEXT NOT NULL
-        );
-      `);
+      await this.pool.query(
+        'CREATE TABLE IF NOT EXISTS users (' +
+        '"id" TEXT PRIMARY KEY, "name" TEXT NOT NULL, "email" TEXT UNIQUE NOT NULL, ' +
+        '"password" TEXT NOT NULL, "createdAt" TEXT NOT NULL' +
+        ');'
+      );
 
-      await this.pool.query(`
-        CREATE TABLE IF NOT EXISTS clients (
-          "id" TEXT PRIMARY KEY,
-          "name" TEXT NOT NULL,
-          "company" TEXT NOT NULL,
-          "email" TEXT NOT NULL,
-          "phone" TEXT NOT NULL,
-          "status" TEXT NOT NULL,
-          "notes" TEXT NOT NULL,
-          "createdAt" TEXT NOT NULL
-        );
-      `);
+      await this.pool.query(
+        'CREATE TABLE IF NOT EXISTS clients (' +
+        '"id" TEXT PRIMARY KEY, "name" TEXT NOT NULL, "company" TEXT NOT NULL, ' +
+        '"email" TEXT NOT NULL, "phone" TEXT NOT NULL, "status" TEXT NOT NULL, ' +
+        '"notes" TEXT NOT NULL, "createdAt" TEXT NOT NULL' +
+        ');'
+      );
 
-      await this.pool.query(`
-        CREATE TABLE IF NOT EXISTS leads (
-          "id" TEXT PRIMARY KEY,
-          "name" TEXT NOT NULL,
-          "email" TEXT NOT NULL,
-          "phone" TEXT NOT NULL,
-          "source" TEXT NOT NULL,
-          "leadScore" INTEGER NOT NULL,
-          "status" TEXT NOT NULL,
-          "createdAt" TEXT NOT NULL
-        );
-      `);
+      await this.pool.query(
+        'CREATE TABLE IF NOT EXISTS leads (' +
+        '"id" TEXT PRIMARY KEY, "name" TEXT NOT NULL, "email" TEXT NOT NULL, ' +
+        '"phone" TEXT NOT NULL, "source" TEXT NOT NULL, "leadScore" INTEGER NOT NULL, ' +
+        '"status" TEXT NOT NULL, "createdAt" TEXT NOT NULL' +
+        ');'
+      );
 
-      await this.pool.query(`
-        CREATE TABLE IF NOT EXISTS tasks (
-          "id" TEXT PRIMARY KEY,
-          "title" TEXT NOT NULL,
-          "description" TEXT NOT NULL,
-          "priority" TEXT NOT NULL,
-          "dueDate" TEXT NOT NULL,
-          "status" TEXT NOT NULL,
-          "createdAt" TEXT NOT NULL
-        );
-      `);
+      await this.pool.query(
+        'CREATE TABLE IF NOT EXISTS tasks (' +
+        '"id" TEXT PRIMARY KEY, "title" TEXT NOT NULL, "description" TEXT NOT NULL, ' +
+        '"priority" TEXT NOT NULL, "dueDate" TEXT NOT NULL, "status" TEXT NOT NULL, ' +
+        '"createdAt" TEXT NOT NULL' +
+        ');'
+      );
 
-      await this.pool.query(`
-        CREATE TABLE IF NOT EXISTS pipelines (
-          "id" TEXT PRIMARY KEY,
-          "title" TEXT NOT NULL,
-          "value" DOUBLE PRECISION NOT NULL,
-          "stage" TEXT NOT NULL,
-          "createdAt" TEXT NOT NULL
-        );
-      `);
+      await this.pool.query(
+        'CREATE TABLE IF NOT EXISTS pipelines (' +
+        '"id" TEXT PRIMARY KEY, "title" TEXT NOT NULL, "value" DOUBLE PRECISION NOT NULL, ' +
+        '"stage" TEXT NOT NULL, "createdAt" TEXT NOT NULL' +
+        ');'
+      );
 
-      await this.pool.query(`
-        CREATE TABLE IF NOT EXISTS ai_emails (
-          "id" TEXT PRIMARY KEY,
-          "clientName" TEXT NOT NULL,
-          "companyName" TEXT NOT NULL,
-          "emailPurpose" TEXT NOT NULL,
-          "tone" TEXT NOT NULL,
-          "additionalContext" TEXT,
-          "subject" TEXT NOT NULL,
-          "body" TEXT NOT NULL,
-          "createdAt" TEXT NOT NULL
-        );
-      `);
+      await this.pool.query(
+        'CREATE TABLE IF NOT EXISTS ai_emails (' +
+        '"id" TEXT PRIMARY KEY, "clientName" TEXT NOT NULL, "companyName" TEXT NOT NULL, ' +
+        '"emailPurpose" TEXT NOT NULL, "tone" TEXT NOT NULL, "additionalContext" TEXT, ' +
+        '"subject" TEXT NOT NULL, "body" TEXT NOT NULL, "createdAt" TEXT NOT NULL' +
+        ');'
+      );
 
-      // Seed default users if empty
       const userRes = await this.pool.query('SELECT COUNT(*)::int as count FROM users');
       if (userRes.rows[0].count === 0) {
         for (const u of DEFAULT_USERS) {
@@ -361,7 +327,6 @@ class Database {
         }
       }
 
-      // Seed default clients if empty
       const clientRes = await this.pool.query('SELECT COUNT(*)::int as count FROM clients');
       if (clientRes.rows[0].count === 0) {
         for (const c of DEFAULT_CLIENTS) {
@@ -372,7 +337,6 @@ class Database {
         }
       }
 
-      // Seed default leads if empty
       const leadRes = await this.pool.query('SELECT COUNT(*)::int as count FROM leads');
       if (leadRes.rows[0].count === 0) {
         for (const l of DEFAULT_LEADS) {
@@ -383,7 +347,6 @@ class Database {
         }
       }
 
-      // Seed default tasks if empty
       const taskRes = await this.pool.query('SELECT COUNT(*)::int as count FROM tasks');
       if (taskRes.rows[0].count === 0) {
         for (const t of DEFAULT_TASKS) {
@@ -394,7 +357,6 @@ class Database {
         }
       }
 
-      // Seed default pipelines if empty
       const pipelineRes = await this.pool.query('SELECT COUNT(*)::int as count FROM pipelines');
       if (pipelineRes.rows[0].count === 0) {
         for (const p of DEFAULT_PIPELINES) {
@@ -405,7 +367,6 @@ class Database {
         }
       }
 
-      // Seed default ai_emails if empty
       const emailRes = await this.pool.query('SELECT COUNT(*)::int as count FROM ai_emails');
       if (emailRes.rows[0].count === 0) {
         for (const e of DEFAULT_AI_EMAILS) {
@@ -423,24 +384,23 @@ class Database {
     }
   }
 
-  private async ensureInit() {
+  async ensureInit() {
     await this.initializedPromise;
   }
 
-  // Users Methods
-  public users = {
-    findMany: async (): Promise<User[]> => {
+  users = {
+    findMany: async () => {
       await this.ensureInit();
       const res = await this.pool.query('SELECT * FROM users');
       return res.rows;
     },
-    findFirst: async (predicate: (user: User) => boolean): Promise<User | null> => {
+    findFirst: async (predicate) => {
       await this.ensureInit();
       const users = await this.users.findMany();
       const found = users.find(predicate);
       return found ? { ...found } : null;
     },
-    create: async (data: User): Promise<User> => {
+    create: async (data) => {
       await this.ensureInit();
       await this.pool.query(
         'INSERT INTO users ("id", "name", "email", "password", "createdAt") VALUES ($1, $2, $3, $4, $5)',
@@ -450,23 +410,22 @@ class Database {
     }
   };
 
-  // Client Methods
-  public clients = {
-    findMany: async (): Promise<Client[]> => {
+  clients = {
+    findMany: async () => {
       await this.ensureInit();
       const res = await this.pool.query('SELECT * FROM clients');
       return res.rows;
     },
-    findUnique: async (id: string): Promise<Client | null> => {
+    findUnique: async (id) => {
       await this.ensureInit();
       const res = await this.pool.query('SELECT * FROM clients WHERE id = $1', [id]);
       return res.rows[0] || null;
     },
-    create: async (data: Omit<Client, 'id' | 'createdAt'>): Promise<Client> => {
+    create: async (data) => {
       await this.ensureInit();
-      const newClient: Client = {
+      const newClient = {
         ...data,
-        id: `client-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+        id: 'client-' + Date.now() + '-' + Math.floor(Math.random() * 1000),
         createdAt: new Date().toISOString()
       };
       await this.pool.query(
@@ -475,10 +434,10 @@ class Database {
       );
       return newClient;
     },
-    update: async (id: string, data: Partial<Omit<Client, 'id' | 'createdAt'>>): Promise<Client> => {
+    update: async (id, data) => {
       await this.ensureInit();
       const current = await this.clients.findUnique(id);
-      if (!current) throw new Error(`Client with id ${id} not found`);
+      if (!current) throw new Error('Client with id ' + id + ' not found');
       const updated = { ...current, ...data };
       await this.pool.query(
         'UPDATE clients SET "name" = $1, "company" = $2, "email" = $3, "phone" = $4, "status" = $5, "notes" = $6 WHERE id = $7',
@@ -486,32 +445,31 @@ class Database {
       );
       return updated;
     },
-    delete: async (id: string): Promise<Client> => {
+    delete: async (id) => {
       await this.ensureInit();
       const current = await this.clients.findUnique(id);
-      if (!current) throw new Error(`Client with id ${id} not found`);
+      if (!current) throw new Error('Client with id ' + id + ' not found');
       await this.pool.query('DELETE FROM clients WHERE id = $1', [id]);
       return current;
     }
   };
 
-  // Lead Methods
-  public leads = {
-    findMany: async (): Promise<Lead[]> => {
+  leads = {
+    findMany: async () => {
       await this.ensureInit();
       const res = await this.pool.query('SELECT * FROM leads');
       return res.rows;
     },
-    findUnique: async (id: string): Promise<Lead | null> => {
+    findUnique: async (id) => {
       await this.ensureInit();
       const res = await this.pool.query('SELECT * FROM leads WHERE id = $1', [id]);
       return res.rows[0] || null;
     },
-    create: async (data: Omit<Lead, 'id' | 'createdAt'>): Promise<Lead> => {
+    create: async (data) => {
       await this.ensureInit();
-      const newLead: Lead = {
+      const newLead = {
         ...data,
-        id: `lead-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+        id: 'lead-' + Date.now() + '-' + Math.floor(Math.random() * 1000),
         createdAt: new Date().toISOString()
       };
       await this.pool.query(
@@ -520,10 +478,10 @@ class Database {
       );
       return newLead;
     },
-    update: async (id: string, data: Partial<Omit<Lead, 'id' | 'createdAt'>>): Promise<Lead> => {
+    update: async (id, data) => {
       await this.ensureInit();
       const current = await this.leads.findUnique(id);
-      if (!current) throw new Error(`Lead with id ${id} not found`);
+      if (!current) throw new Error('Lead with id ' + id + ' not found');
       const updated = { ...current, ...data };
       await this.pool.query(
         'UPDATE leads SET "name" = $1, "email" = $2, "phone" = $3, "source" = $4, "leadScore" = $5, "status" = $6 WHERE id = $7',
@@ -531,32 +489,31 @@ class Database {
       );
       return updated;
     },
-    delete: async (id: string): Promise<Lead> => {
+    delete: async (id) => {
       await this.ensureInit();
       const current = await this.leads.findUnique(id);
-      if (!current) throw new Error(`Lead with id ${id} not found`);
+      if (!current) throw new Error('Lead with id ' + id + ' not found');
       await this.pool.query('DELETE FROM leads WHERE id = $1', [id]);
       return current;
     }
   };
 
-  // Task Methods
-  public tasks = {
-    findMany: async (): Promise<Task[]> => {
+  tasks = {
+    findMany: async () => {
       await this.ensureInit();
       const res = await this.pool.query('SELECT * FROM tasks');
       return res.rows;
     },
-    findUnique: async (id: string): Promise<Task | null> => {
+    findUnique: async (id) => {
       await this.ensureInit();
       const res = await this.pool.query('SELECT * FROM tasks WHERE id = $1', [id]);
       return res.rows[0] || null;
     },
-    create: async (data: Omit<Task, 'id' | 'createdAt'>): Promise<Task> => {
+    create: async (data) => {
       await this.ensureInit();
-      const newTask: Task = {
+      const newTask = {
         ...data,
-        id: `task-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+        id: 'task-' + Date.now() + '-' + Math.floor(Math.random() * 1000),
         createdAt: new Date().toISOString()
       };
       await this.pool.query(
@@ -565,10 +522,10 @@ class Database {
       );
       return newTask;
     },
-    update: async (id: string, data: Partial<Omit<Task, 'id' | 'createdAt'>>): Promise<Task> => {
+    update: async (id, data) => {
       await this.ensureInit();
       const current = await this.tasks.findUnique(id);
-      if (!current) throw new Error(`Task with id ${id} not found`);
+      if (!current) throw new Error('Task with id ' + id + ' not found');
       const updated = { ...current, ...data };
       await this.pool.query(
         'UPDATE tasks SET "title" = $1, "description" = $2, "priority" = $3, "dueDate" = $4, "status" = $5 WHERE id = $6',
@@ -576,32 +533,31 @@ class Database {
       );
       return updated;
     },
-    delete: async (id: string): Promise<Task> => {
+    delete: async (id) => {
       await this.ensureInit();
       const current = await this.tasks.findUnique(id);
-      if (!current) throw new Error(`Task with id ${id} not found`);
+      if (!current) throw new Error('Task with id ' + id + ' not found');
       await this.pool.query('DELETE FROM tasks WHERE id = $1', [id]);
       return current;
     }
   };
 
-  // Pipeline Methods
-  public pipelines = {
-    findMany: async (): Promise<Pipeline[]> => {
+  pipelines = {
+    findMany: async () => {
       await this.ensureInit();
       const res = await this.pool.query('SELECT * FROM pipelines');
       return res.rows;
     },
-    findUnique: async (id: string): Promise<Pipeline | null> => {
+    findUnique: async (id) => {
       await this.ensureInit();
       const res = await this.pool.query('SELECT * FROM pipelines WHERE id = $1', [id]);
       return res.rows[0] || null;
     },
-    create: async (data: Omit<Pipeline, 'id' | 'createdAt'>): Promise<Pipeline> => {
+    create: async (data) => {
       await this.ensureInit();
-      const newPipeline: Pipeline = {
+      const newPipeline = {
         ...data,
-        id: `deal-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+        id: 'deal-' + Date.now() + '-' + Math.floor(Math.random() * 1000),
         createdAt: new Date().toISOString()
       };
       await this.pool.query(
@@ -610,10 +566,10 @@ class Database {
       );
       return newPipeline;
     },
-    update: async (id: string, data: Partial<Omit<Pipeline, 'id' | 'createdAt'>>): Promise<Pipeline> => {
+    update: async (id, data) => {
       await this.ensureInit();
       const current = await this.pipelines.findUnique(id);
-      if (!current) throw new Error(`Pipeline deal with id ${id} not found`);
+      if (!current) throw new Error('Pipeline deal with id ' + id + ' not found');
       const updated = { ...current, ...data };
       await this.pool.query(
         'UPDATE pipelines SET "title" = $1, "value" = $2, "stage" = $3 WHERE id = $4',
@@ -621,27 +577,26 @@ class Database {
       );
       return updated;
     },
-    delete: async (id: string): Promise<Pipeline> => {
+    delete: async (id) => {
       await this.ensureInit();
       const current = await this.pipelines.findUnique(id);
-      if (!current) throw new Error(`Pipeline deal with id ${id} not found`);
+      if (!current) throw new Error('Pipeline deal with id ' + id + ' not found');
       await this.pool.query('DELETE FROM pipelines WHERE id = $1', [id]);
       return current;
     }
   };
 
-  // AI Email Methods
-  public aiEmails = {
-    findMany: async (): Promise<AIEmail[]> => {
+  aiEmails = {
+    findMany: async () => {
       await this.ensureInit();
       const res = await this.pool.query('SELECT * FROM ai_emails ORDER BY "createdAt" DESC');
       return res.rows;
     },
-    create: async (data: Omit<AIEmail, 'id' | 'createdAt'>): Promise<AIEmail> => {
+    create: async (data) => {
       await this.ensureInit();
-      const newEmail: AIEmail = {
+      const newEmail = {
         ...data,
-        id: `email-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+        id: 'email-' + Date.now() + '-' + Math.floor(Math.random() * 1000),
         createdAt: new Date().toISOString()
       };
       await this.pool.query(

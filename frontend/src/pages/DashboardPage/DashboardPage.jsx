@@ -6,8 +6,7 @@
 import React, { useState, useEffect } from 'react';
 import './DashboardPage.css';
 import { dashboardService } from '../../services/api';
-import { DashboardStats } from '../../types';
-import { Toast, ToastType } from '../../components/common/Toast';
+import { Toast } from '../../components/common/Toast';
 import { Users, UserCheck, ClipboardList, Coins, TrendingUp, Inbox } from 'lucide-react';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -16,11 +15,11 @@ import {
 
 const CHR_COLORS = ['#6366f1', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#ef4444'];
 
-export const DashboardPage: React.FC = () => {
-  const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [toastMsg, setToastMsg] = useState<string | null>(null);
-  const [toastType, setToastType] = useState<ToastType>('success');
+export const DashboardPage = () => {
+  const [stats, setStats] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [toastMsg, setToastMsg] = useState(null);
+  const [toastType, setToastType] = useState('success');
 
   useEffect(() => {
     dashboardService.getStats()
@@ -43,7 +42,7 @@ export const DashboardPage: React.FC = () => {
     );
   }
 
-  const formatUSD = (val: number) =>
+  const formatUSD = (val) =>
     new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(val);
 
   const statCards = [
@@ -115,12 +114,12 @@ export const DashboardPage: React.FC = () => {
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="#27272a" opacity={0.3} />
                   <XAxis dataKey="month" stroke="#71717a" fontSize={10} tickLine={false} axisLine={false} />
-                  <YAxis stroke="#71717a" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(v) => `${v / 1000}k`} />
+                  <YAxis stroke="#71717a" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(v) => v / 1000 + 'k'} />
                   <Tooltip
                     contentStyle={{ backgroundColor: '#18181b', border: '1px solid #27272a', borderRadius: '6px', fontSize: '11px' }}
                     labelStyle={{ color: '#a1a1aa', fontWeight: 'bold' }}
                     itemStyle={{ color: '#fafafa' }}
-                    formatter={(val: number) => [val.toLocaleString(), 'Income']}
+                    formatter={(val) => [val.toLocaleString(), 'Income']}
                   />
                   <Area type="monotone" dataKey="amount" stroke="#6366f1" strokeWidth={1.5} fillOpacity={1} fill="url(#colorRevenue)" />
                 </AreaChart>
@@ -146,7 +145,7 @@ export const DashboardPage: React.FC = () => {
                 <PieChart>
                   <Pie data={stats.leadConversion} cx="50%" cy="50%" innerRadius={50} outerRadius={68} paddingAngle={3} dataKey="value">
                     {stats.leadConversion.map((_, index) => (
-                      <Cell key={`cell-${index}`} fill={CHR_COLORS[index % CHR_COLORS.length]} />
+                      <Cell key={'cell-' + index} fill={CHR_COLORS[index % CHR_COLORS.length]} />
                     ))}
                   </Pie>
                   <Tooltip

@@ -6,31 +6,30 @@
 import React, { useState, useEffect } from 'react';
 import './PipelinePage.css';
 import { pipelineService } from '../../services/api';
-import { Pipeline, PipelineStage } from '../../types';
 import { Dialog } from '../../components/common/Dialog';
 import { PipelineForm } from '../../components/forms/PipelineForm';
-import { Toast, ToastType } from '../../components/common/Toast';
+import { Toast } from '../../components/common/Toast';
 import { Plus, DollarSign, Inbox, Trash2 } from 'lucide-react';
 
-const STAGES: PipelineStage[] = ['New Lead', 'Contacted', 'Qualified', 'Proposal Sent', 'Won', 'Lost'];
+const STAGES = ['New Lead', 'Contacted', 'Qualified', 'Proposal Sent', 'Won', 'Lost'];
 
-const stageHeaderMod = (stage: PipelineStage): string => {
+const stageHeaderMod = (stage) => {
   if (stage === 'Won')           return 'pp-col-header--won';
   if (stage === 'Lost')          return 'pp-col-header--lost';
   if (stage === 'Proposal Sent') return 'pp-col-header--proposal';
   return 'pp-col-header--default';
 };
 
-export const PipelinePage: React.FC = () => {
-  const [deals, setDeals] = useState<Pipeline[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [draggingId, setDraggingId] = useState<string | null>(null);
-  const [isCreateOpen, setIsCreateOpen] = useState<boolean>(false);
-  const [isCreateAtStage, setIsCreateAtStage] = useState<PipelineStage>('New Lead');
-  const [editingDeal, setEditingDeal] = useState<Pipeline | null>(null);
-  const [toastMsg, setToastMsg] = useState<string | null>(null);
-  const [toastType, setToastType] = useState<ToastType>('success');
-  const [syncing, setSyncing] = useState<boolean>(false);
+export const PipelinePage = () => {
+  const [deals, setDeals] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [draggingId, setDraggingId] = useState(null);
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isCreateAtStage, setIsCreateAtStage] = useState('New Lead');
+  const [editingDeal, setEditingDeal] = useState(null);
+  const [toastMsg, setToastMsg] = useState(null);
+  const [toastType, setToastType] = useState('success');
+  const [syncing, setSyncing] = useState(false);
 
   const fetchDeals = async () => {
     try {
@@ -45,9 +44,9 @@ export const PipelinePage: React.FC = () => {
 
   useEffect(() => { fetchDeals(); }, []);
 
-  const triggerToast = (msg: string, type: ToastType) => { setToastMsg(msg); setToastType(type); };
+  const triggerToast = (msg, type) => { setToastMsg(msg); setToastType(type); };
 
-  const handleCreateSubmit = async (data: Omit<Pipeline, 'id' | 'createdAt'>) => {
+  const handleCreateSubmit = async (data) => {
     setSyncing(true);
     try {
       await pipelineService.create({ ...data, stage: isCreateAtStage });
@@ -58,7 +57,7 @@ export const PipelinePage: React.FC = () => {
     finally { setSyncing(false); }
   };
 
-  const handleEditSubmit = async (data: Omit<Pipeline, 'id' | 'createdAt'>) => {
+  const handleEditSubmit = async (data) => {
     if (!editingDeal) return;
     setSyncing(true);
     try {
@@ -70,7 +69,7 @@ export const PipelinePage: React.FC = () => {
     finally { setSyncing(false); }
   };
 
-  const handleDelete = async (id: string, e: React.MouseEvent) => {
+  const handleDelete = async (id, e) => {
     e.stopPropagation();
     if (!window.confirm('Remove this deal from pipeline?')) return;
     try {
@@ -80,13 +79,13 @@ export const PipelinePage: React.FC = () => {
     } catch { triggerToast('Failed to remove deal.', 'error'); }
   };
 
-  const handleDragStart = (e: React.DragEvent, id: string) => {
+  const handleDragStart = (e, id) => {
     setDraggingId(id);
     e.dataTransfer.setData('text/plain', id);
     e.dataTransfer.effectAllowed = 'move';
   };
 
-  const handleDrop = async (e: React.DragEvent, targetStage: PipelineStage) => {
+  const handleDrop = async (e, targetStage) => {
     e.preventDefault();
     const dealId = e.dataTransfer.getData('text/plain');
     if (!dealId) return;
@@ -99,17 +98,17 @@ export const PipelinePage: React.FC = () => {
 
     try {
       await pipelineService.update(dealId, { stage: targetStage });
-      triggerToast(`Moved to ${targetStage}.`, 'success');
+      triggerToast('Moved to ' + targetStage + '.', 'success');
     } catch {
       triggerToast('Failed to update stage. Reverting.', 'error');
       fetchDeals();
     }
   };
 
-  const formatUSD = (val: number) =>
+  const formatUSD = (val) =>
     new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(val);
 
-  const openAddAtStage = (stage: PipelineStage) => { setIsCreateAtStage(stage); setIsCreateOpen(true); };
+  const openAddAtStage = (stage) => { setIsCreateAtStage(stage); setIsCreateOpen(true); };
 
   if (loading) return null;
 
@@ -139,12 +138,12 @@ export const PipelinePage: React.FC = () => {
             return (
               <div
                 key={stage}
-                className={`pp-column ${draggingId ? 'pp-column--drag-over' : ''}`}
+                className={'pp-column ' + (draggingId ? 'pp-column--drag-over' : '')}
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={(e) => handleDrop(e, stage)}
               >
                 {/* Column header */}
-                <div className={`pp-col-header ${stageHeaderMod(stage)}`}>
+                <div className={'pp-col-header ' + stageHeaderMod(stage)}>
                   <div className="pp-col-header__left">
                     <span className="pp-col-header__title">{stage}</span>
                     <span className="pp-col-header__count">{stageDeals.length} {stageDeals.length === 1 ? 'deal' : 'deals'}</span>
@@ -162,7 +161,7 @@ export const PipelinePage: React.FC = () => {
                         onDragStart={(e) => handleDragStart(e, deal.id)}
                         onDragEnd={() => setDraggingId(null)}
                         onClick={() => setEditingDeal(deal)}
-                        className={`pp-deal-card ${draggingId === deal.id ? 'pp-deal-card--dragging' : ''}`}
+                        className={'pp-deal-card ' + (draggingId === deal.id ? 'pp-deal-card--dragging' : '')}
                       >
                         <p className="pp-deal-card__title">{deal.title}</p>
                         <div className="pp-deal-card__footer">

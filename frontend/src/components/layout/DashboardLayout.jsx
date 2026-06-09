@@ -20,11 +20,7 @@ import {
   ShieldCheck
 } from 'lucide-react';
 
-interface DashboardLayoutProps {
-  children: React.ReactNode;
-}
-
-export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
+export const DashboardLayout = ({ children }) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -88,11 +84,11 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
                     key={link.name}
                     to={link.to}
                     onClick={() => setSidebarOpen(false)}
-                    className={`flex items-center gap-3 px-4 py-2 rounded-md text-sm font-medium transition-all duration-150 ${
-                      isActive
+                    className={'flex items-center gap-3 px-4 py-2 rounded-md text-sm font-medium transition-all duration-150 ' +
+                      (isActive
                         ? 'bg-[#18181b] text-white border border-[#27272a] shadow-sm'
-                        : 'text-zinc-400 hover:text-white hover:bg-white/5 border border-transparent'
-                    }`}
+                        : 'text-zinc-400 hover:text-white hover:bg-white/5 border border-transparent')
+                    }
                   >
                     <Icon className="w-4 h-4 shrink-0 opacity-70" />
                     {link.name}
@@ -132,11 +128,11 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
               <NavLink
                 key={link.name}
                 to={link.to}
-                className={`flex items-center gap-3 px-3.5 py-2 rounded-md text-sm font-medium transition-all duration-150 border ${
-                  isActive
+                className={'flex items-center gap-3 px-3.5 py-2 rounded-md text-sm font-medium transition-all duration-150 border ' +
+                  (isActive
                     ? 'bg-[#18181b] text-white border-[#27272a] shadow-sm'
-                    : 'text-zinc-400 hover:text-white hover:bg-white/5 border-transparent'
-                }`}
+                    : 'text-zinc-400 hover:text-white hover:bg-white/5 border-transparent')
+                }
               >
                 <Icon className="w-4 h-4 shrink-0 opacity-75" />
                 {link.name}

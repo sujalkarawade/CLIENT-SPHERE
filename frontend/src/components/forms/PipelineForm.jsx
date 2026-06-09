@@ -5,22 +5,8 @@
 
 import React from 'react';
 import { useForm } from 'react-hook-form';
-import { Pipeline, PipelineStage } from '../../types';
 
-interface PipelineFormProps {
-  initialData?: Pipeline;
-  onSubmit: (data: Omit<Pipeline, 'id' | 'createdAt'>) => void;
-  onCancel: () => void;
-  isSubmitting?: boolean;
-}
-
-interface FormInputs {
-  title: string;
-  value: number;
-  stage: PipelineStage;
-}
-
-const STAGES: PipelineStage[] = [
+const STAGES = [
   'New Lead',
   'Contacted',
   'Qualified',
@@ -29,7 +15,7 @@ const STAGES: PipelineStage[] = [
   'Lost',
 ];
 
-export const PipelineForm: React.FC<PipelineFormProps> = ({
+export const PipelineForm = ({
   initialData,
   onSubmit,
   onCancel,
@@ -39,7 +25,7 @@ export const PipelineForm: React.FC<PipelineFormProps> = ({
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<FormInputs>({
+  } = useForm({
     defaultValues: {
       title: initialData?.title || '',
       value: initialData?.value || 5000,
@@ -56,11 +42,11 @@ export const PipelineForm: React.FC<PipelineFormProps> = ({
         <input
           type="text"
           placeholder="e.g. Acme Enterprise SaaS License"
-          className={`w-full bg-[#18181b] rounded border px-3 py-1.5 text-xs text-white focus:outline-none focus:border-zinc-500 transition-colors ${
-            errors.title
+          className={'w-full bg-[#18181b] rounded border px-3 py-1.5 text-xs text-white focus:outline-none focus:border-zinc-500 transition-colors ' +
+            (errors.title
               ? 'border-rose-500/50'
-              : 'border-[#27272a]'
-          }`}
+              : 'border-[#27272a]')
+          }
           {...register('title', { required: 'Deal title is required' })}
         />
         {errors.title && <p className="mt-1 text-xs text-rose-455 font-medium">{errors.title.message}</p>}
@@ -74,11 +60,11 @@ export const PipelineForm: React.FC<PipelineFormProps> = ({
           type="number"
           step="0.01"
           placeholder="e.g. 15000"
-          className={`w-full bg-[#18181b] rounded border px-3 py-1.5 text-xs text-white focus:outline-none focus:border-zinc-500 transition-colors ${
-            errors.value
+          className={'w-full bg-[#18181b] rounded border px-3 py-1.5 text-xs text-white focus:outline-none focus:border-zinc-500 transition-colors ' +
+            (errors.value
               ? 'border-rose-500/50'
-              : 'border-[#27272a]'
-          }`}
+              : 'border-[#27272a]')
+          }
           {...register('value', {
             required: 'Deal financial value is mandatory',
             min: { value: 0, message: 'Deal value cannot be negative' },

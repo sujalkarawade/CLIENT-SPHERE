@@ -5,28 +5,11 @@
 
 import React from 'react';
 import { useForm } from 'react-hook-form';
-import { Lead, LeadSource, LeadStatus } from '../../types';
 
-interface LeadFormProps {
-  initialData?: Lead;
-  onSubmit: (data: Omit<Lead, 'id' | 'createdAt'>) => void;
-  onCancel: () => void;
-  isSubmitting?: boolean;
-}
+const SOURCES = ['Website', 'Referral', 'Cold Outreach', 'Ad Campaign', 'Partner', 'Other'];
+const STATUSES = ['New', 'Contacted', 'Qualified', 'Proposal', 'Nurturing', 'Unqualified'];
 
-interface FormInputs {
-  name: string;
-  email: string;
-  phone: string;
-  source: LeadSource;
-  leadScore: number;
-  status: LeadStatus;
-}
-
-const SOURCES: LeadSource[] = ['Website', 'Referral', 'Cold Outreach', 'Ad Campaign', 'Partner', 'Other'];
-const STATUSES: LeadStatus[] = ['New', 'Contacted', 'Qualified', 'Proposal', 'Nurturing', 'Unqualified'];
-
-export const LeadForm: React.FC<LeadFormProps> = ({
+export const LeadForm = ({
   initialData,
   onSubmit,
   onCancel,
@@ -36,7 +19,7 @@ export const LeadForm: React.FC<LeadFormProps> = ({
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<FormInputs>({
+  } = useForm({
     defaultValues: {
       name: initialData?.name || '',
       email: initialData?.email || '',
@@ -56,11 +39,11 @@ export const LeadForm: React.FC<LeadFormProps> = ({
         <input
           type="text"
           placeholder="e.g. Clark Kent"
-          className={`w-full bg-[#18181b] rounded border px-3 py-1.5 text-xs text-white focus:outline-none focus:border-zinc-500 transition-colors ${
-            errors.name
+          className={'w-full bg-[#18181b] rounded border px-3 py-1.5 text-xs text-white focus:outline-none focus:border-zinc-500 transition-colors ' +
+            (errors.name
               ? 'border-rose-500/50'
-              : 'border-[#27272a]'
-          }`}
+              : 'border-[#27272a]')
+          }
           {...register('name', { required: 'Prospect name is required' })}
         />
         {errors.name && <p className="mt-1 text-xs text-rose-455 font-medium">{errors.name.message}</p>}
@@ -74,11 +57,11 @@ export const LeadForm: React.FC<LeadFormProps> = ({
           <input
             type="email"
             placeholder="clark@dailyplanet.com"
-            className={`w-full bg-[#18181b] rounded border px-3 py-1.5 text-xs text-white focus:outline-none focus:border-zinc-500 transition-colors ${
-              errors.email
+            className={'w-full bg-[#18181b] rounded border px-3 py-1.5 text-xs text-white focus:outline-none focus:border-zinc-500 transition-colors ' +
+              (errors.email
                 ? 'border-rose-500/50'
-                : 'border-[#27272a]'
-            }`}
+                : 'border-[#27272a]')
+            }
             {...register('email', {
               required: 'Email address is required',
               pattern: { value: /^\S+@\S+$/i, message: 'Please input a valid email formatting' },
@@ -147,11 +130,11 @@ export const LeadForm: React.FC<LeadFormProps> = ({
           type="number"
           min="0"
           max="100"
-          className={`w-full bg-[#18181b] rounded border px-3 py-1.5 text-xs text-white focus:outline-none focus:border-zinc-500 transition-colors ${
-            errors.leadScore
+          className={'w-full bg-[#18181b] rounded border px-3 py-1.5 text-xs text-white focus:outline-none focus:border-zinc-500 transition-colors ' +
+            (errors.leadScore
               ? 'border-rose-500/50'
-              : 'border-[#27272a]'
-          }`}
+              : 'border-[#27272a]')
+          }
           {...register('leadScore', {
             required: 'Score is required',
             min: { value: 0, message: 'Minimum score is 0' },

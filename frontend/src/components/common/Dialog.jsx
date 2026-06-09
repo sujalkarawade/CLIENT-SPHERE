@@ -6,16 +6,9 @@
 import React, { useEffect } from 'react';
 import { X } from 'lucide-react';
 
-interface DialogProps {
-  isOpen: boolean;
-  onClose: () => void;
-  title: string;
-  children: React.ReactNode;
-}
-
-export const Dialog: React.FC<DialogProps> = ({ isOpen, onClose, title, children }) => {
+export const Dialog = ({ isOpen, onClose, title, children }) => {
   useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
+    const handleEscape = (e) => {
       if (e.key === 'Escape') onClose();
     };
 
