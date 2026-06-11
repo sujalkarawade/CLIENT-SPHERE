@@ -317,6 +317,13 @@ class Database {
         ');'
       );
 
+      await this.pool.query(
+        'CREATE TABLE IF NOT EXISTS ai_conversations (' +
+        '"id" TEXT PRIMARY KEY, "userId" TEXT NOT NULL, "role" TEXT NOT NULL, ' +
+        '"content" TEXT NOT NULL, "createdAt" TEXT NOT NULL' +
+        ');'
+      );
+
 
       const userRes = await this.pool.query('SELECT COUNT(*)::int as count FROM users');
       if (userRes.rows[0].count === 0) {
@@ -605,6 +612,31 @@ class Database {
         [newEmail.id, newEmail.clientName, newEmail.companyName, newEmail.emailPurpose, newEmail.tone, newEmail.additionalContext || '', newEmail.subject, newEmail.body, newEmail.createdAt]
       );
       return newEmail;
+    }
+  };
+
+  aiConversations = {
+    findManyByUser: async (userId) => {
+      await this.ensureInit();
+      const res = await this.pool.query('SELECT * FROM ai_conversations WHERE "userId" = $1 ORDER BY "createdAt" ASC', [userId]);
+      return res.rows;
+    },
+    create: async (data) => {
+      await this.ensureInit();
+      const newMessage = {
+        ...data,
+        id: 'conv-' + Date.now() + '-' + Math.floor(Math.random() * 1000),
+        createdAt: new Date().toISOString()
+      };
+      await this.pool.query(
+        'INSERT INTO ai_conversations ("id", "userId", "role", "content", "createdAt") VALUES ($1, $2, $3, $4, $5)',
+        [newMessage.id, newMessage.userId, newMessage.role, newMessage.content, newMessage.createdAt]
+      );
+      return newMessage;
+    },
+    deleteManyByUser: async (userId) => {
+      await this.ensureInit();
+      await this.pool.query('DELETE FROM ai_conversations WHERE "userId" = $1', [userId]);
     }
   };
 }

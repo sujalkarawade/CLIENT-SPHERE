@@ -137,4 +137,19 @@ export const aiEmailService = {
   },
 };
 
+export const assistantService = {
+  chat: async (message) => {
+    const res = await api.post('/assistant/chat', { message });
+    return res.data;
+  },
+  getHistory: async () => {
+    const res = await api.get('/assistant/history');
+    return res.data;
+  },
+  clearHistory: async () => {
+    const res = await api.delete('/assistant/history');
+    return res.data;
+  },
+};
+
 export default api;

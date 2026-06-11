@@ -16,6 +16,7 @@ import { LeadsPage } from './pages/LeadsPage/LeadsPage';
 import { TasksPage } from './pages/TasksPage/TasksPage';
 import { PipelinePage } from './pages/PipelinePage/PipelinePage';
 import { AIEmailGeneratorPage } from './pages/AIEmailGeneratorPage/AIEmailGeneratorPage';
+import { AIAssistantPage } from './pages/AIAssistantPage/AIAssistantPage';
 export default function App() {
   return (
     <AuthProvider>
@@ -78,6 +79,16 @@ export default function App() {
               <ProtectedRoute>
                 <DashboardLayout>
                   <AIEmailGeneratorPage />
+                </DashboardLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/ai-assistant"
+            element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <AIAssistantPage />
                 </DashboardLayout>
               </ProtectedRoute>
             }

@@ -496,7 +496,7 @@ router.get('/dashboard/stats', authMiddleware, async (req, res) => {
 // AI EMAIL GENERATOR ROUTER
 // =====================================================
 
-import { generateEmail } from '../services/groq.js';
+import { generateEmail, chatWithAssistant } from '../services/groq.js';
 
 router.post('/ai/generate', authMiddleware, async (req, res) => {
   try {
@@ -551,6 +551,78 @@ router.post('/ai/emails', authMiddleware, async (req, res) => {
     res.status(201).json(saved);
   } catch (err) {
     res.status(500).json({ message: 'Failed to save email to database.' });
+  }
+});
+
+// =====================================================
+// AI ASSISTANT ROUTER
+// =====================================================
+
+router.post('/assistant/chat', authMiddleware, async (req, res) => {
+  try {
+    const { message } = req.body;
+    if (!message) {
+      res.status(400).json({ message: 'Message is required.' });
+      return;
+    }
+
+    const userId = req.user.id;
+
+    // Get CRM data
+    const clients = await db.clients.findMany();
+    const leads = await db.leads.findMany();
+    const tasks = await db.tasks.findMany();
+    const pipelines = await db.pipelines.findMany();
+
+    // Get conversation history
+    const history = await db.aiConversations.findManyByUser(userId);
+    const conversationHistory = history.map(h => ({ role: h.role, content: h.content }));
+
+    // Save user message
+    await db.aiConversations.create({
+      userId,
+      role: 'user',
+      content: message
+    });
+
+    // Get AI response
+    const aiResponse = await chatWithAssistant({
+      userMessage: message,
+      crmContext: { clients, leads, tasks, pipelines },
+      conversationHistory
+    });
+
+    // Save assistant message
+    await db.aiConversations.create({
+      userId,
+      role: 'assistant',
+      content: aiResponse
+    });
+
+    res.json({ response: aiResponse });
+  } catch (err) {
+    console.error('Error in assistant chat:', err);
+    res.status(500).json({ message: err.message || 'Failed to get response from assistant.' });
+  }
+});
+
+router.get('/assistant/history', authMiddleware, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const history = await db.aiConversations.findManyByUser(userId);
+    res.json(history);
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to get conversation history.' });
+  }
+});
+
+router.delete('/assistant/history', authMiddleware, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    await db.aiConversations.deleteManyByUser(userId);
+    res.json({ message: 'Conversation history cleared.' });
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to clear conversation history.' });
   }
 });
 
