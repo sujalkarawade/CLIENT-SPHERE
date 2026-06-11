@@ -5,9 +5,9 @@
 
 import React, { useState, useEffect } from 'react';
 import './DashboardPage.css';
-import { dashboardService, aiLeadScoringService } from '../../services/api';
+import { dashboardService } from '../../services/api';
 import { Toast } from '../../components/common/Toast';
-import { Users, UserCheck, ClipboardList, Coins, TrendingUp, Inbox, BrainCircuit, Flame, Thermometer, Snowflake, BarChart3, Star } from 'lucide-react';
+import { Users, UserCheck, ClipboardList, Coins, TrendingUp, Inbox } from 'lucide-react';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, PieChart, Pie, Cell,
@@ -17,19 +17,14 @@ const CHR_COLORS = ['#6366f1', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#ef4
 
 export const DashboardPage = () => {
   const [stats, setStats] = useState(null);
-  const [aiScoringStats, setAiScoringStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [toastMsg, setToastMsg] = useState(null);
   const [toastType, setToastType] = useState('success');
 
   useEffect(() => {
-    Promise.all([
-      dashboardService.getStats(),
-      aiLeadScoringService.getStats().catch(() => null),
-    ])
-      .then(([statsData, aiData]) => {
+    dashboardService.getStats()
+      .then((statsData) => {
         setStats(statsData);
-        setAiScoringStats(aiData);
       })
       .catch(() => {
         setToastMsg('Failed to load dashboard data.');
@@ -97,72 +92,6 @@ export const DashboardPage = () => {
           </div>
         ))}
       </div>
-
-      {/* AI Lead Scoring Widgets */}
-      {aiScoringStats && (
-        <div className="dp-ai-widgets">
-          <div className="dp-ai-widgets__header">
-            <BrainCircuit style={{ width: '1rem', height: '1rem', color: '#a78bfa' }} />
-            <span>AI Lead Scoring Overview</span>
-          </div>
-          <div className="dp-ai-widgets__grid">
-            <div className="dp-ai-widget" style={{ borderLeftColor: '#ef4444' }}>
-              <div className="dp-ai-widget__top">
-                <span className="dp-ai-widget__label">Hot Leads</span>
-                <Flame style={{ width: '0.875rem', height: '0.875rem', color: '#ef4444' }} />
-              </div>
-              <span className="dp-ai-widget__value" style={{ color: '#ef4444' }}>{aiScoringStats.hotCount || 0}</span>
-            </div>
-            <div className="dp-ai-widget" style={{ borderLeftColor: '#eab308' }}>
-              <div className="dp-ai-widget__top">
-                <span className="dp-ai-widget__label">Warm Leads</span>
-                <Thermometer style={{ width: '0.875rem', height: '0.875rem', color: '#eab308' }} />
-              </div>
-              <span className="dp-ai-widget__value" style={{ color: '#eab308' }}>{aiScoringStats.warmCount || 0}</span>
-            </div>
-            <div className="dp-ai-widget" style={{ borderLeftColor: '#3b82f6' }}>
-              <div className="dp-ai-widget__top">
-                <span className="dp-ai-widget__label">Cold Leads</span>
-                <Snowflake style={{ width: '0.875rem', height: '0.875rem', color: '#3b82f6' }} />
-              </div>
-              <span className="dp-ai-widget__value" style={{ color: '#3b82f6' }}>{aiScoringStats.coldCount || 0}</span>
-            </div>
-            <div className="dp-ai-widget" style={{ borderLeftColor: '#a78bfa' }}>
-              <div className="dp-ai-widget__top">
-                <span className="dp-ai-widget__label">Avg AI Score</span>
-                <BarChart3 style={{ width: '0.875rem', height: '0.875rem', color: '#a78bfa' }} />
-              </div>
-              <span className="dp-ai-widget__value" style={{ color: '#a78bfa' }}>{aiScoringStats.averageScore || 0}</span>
-            </div>
-          </div>
-
-          {/* Top 5 Highest Scoring Leads */}
-          {aiScoringStats.top5?.length > 0 && (
-            <div className="dp-ai-top">
-              <div className="dp-ai-top__header">
-                <Star style={{ width: '0.875rem', height: '0.875rem', color: '#eab308' }} />
-                <span>Top 5 Highest Scoring Leads</span>
-              </div>
-              <div className="dp-ai-top__list">
-                {aiScoringStats.top5.map((lead, idx) => (
-                  <div key={lead.id} className="dp-ai-top__item">
-                    <span className="dp-ai-top__rank">#{idx + 1}</span>
-                    <div className="dp-ai-top__info">
-                      <span className="dp-ai-top__name">{lead.name}</span>
-                      <span className="dp-ai-top__email">{lead.email}</span>
-                    </div>
-                    <div className="dp-ai-top__score" style={{
-                      color: lead.aiCategory === 'Hot' ? '#ef4444' : lead.aiCategory === 'Warm' ? '#eab308' : '#3b82f6',
-                    }}>
-                      {lead.aiScore}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      )}
 
       {/* Charts */}
       <div className="dp-charts-grid">
