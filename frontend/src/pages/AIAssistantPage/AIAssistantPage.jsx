@@ -3,239 +3,250 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import './AIAssistantPage.css';
-import { assistantService } from '../../services/api';
+import { aiAssistantService } from '../../services/api';
 import { Toast } from '../../components/common/Toast';
-import { Brain, Send, Trash2, Copy, Sparkles, BarChart3, CheckCircle, Mail, Users, AlertTriangle } from 'lucide-react';
+import { Send, Trash2, Copy, Check, AlertTriangle, Bot } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 
+// ── Quick suggestion prompts ──────────────────────────────────────────────────
+const SUGGESTIONS = [
+  'Show my hottest leads',
+  'What are my overdue tasks?',
+  'Summarize the sales pipeline',
+  'Which clients are inactive?',
+  'Who are the top 5 highest scoring leads?',
+  'What is my total pipeline value?',
+];
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function formatTime(iso) {
+  return new Date(iso).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+}
+
+function CopyBtn({ text }) {
+  const [done, setDone] = useState(false);
+  const copy = async () => {
+    try { await navigator.clipboard.writeText(text); setDone(true); setTimeout(() => setDone(false), 1600); } catch { /* ignore */ }
+  };
+  return (
+    <button type="button" className="aca-copy-btn" onClick={copy}>
+      {done
+        ? <><Check style={{ width: '0.5rem', height: '0.5rem' }} /> Copied</>
+        : <><Copy style={{ width: '0.5rem', height: '0.5rem' }} /> Copy</>}
+    </button>
+  );
+}
+
+// ── Main ──────────────────────────────────────────────────────────────────────
 export const AIAssistantPage = () => {
+  const { user } = useAuth();
   const [messages, setMessages] = useState([]);
-  const [input, setInput] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [loadingHistory, setLoadingHistory] = useState(true);
-  const [toastMsg, setToastMsg] = useState(null);
-  const [toastType, setToastType] = useState('success');
-  const [apiKeyWarning, setApiKeyWarning] = useState(null);
-  const messagesEndRef = useRef(null);
+  const [input, setInput]       = useState('');
+  const [sending, setSending]   = useState(false);
+  const [apiWarn, setApiWarn]   = useState(null);
+  const [toast, setToast]       = useState(null);
 
-  // Suggested prompts
-  const suggestions = [
-    { text: "Show my hottest leads", icon: Sparkles },
-    { text: "Which clients haven't been contacted recently?", icon: Users },
-    { text: "What are my overdue tasks?", icon: CheckCircle },
-    { text: "Summarize my sales pipeline", icon: BarChart3 },
-    { text: "Generate a follow-up email for a client", icon: Mail },
-    { text: "Who are my top 5 highest scoring leads?", icon: Sparkles },
-  ];
+  const endRef      = useRef(null);
+  const textareaRef = useRef(null);
 
-  // Scroll to bottom of messages
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  // scroll to bottom whenever messages change
+  useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages, sending]);
+
+  // auto-resize textarea
+  const resizeTextarea = (el) => {
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, 112) + 'px';
   };
 
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages, loading]);
+  const handleInput = (e) => {
+    setInput(e.target.value);
+    resizeTextarea(e.target);
+  };
 
-  // Load conversation history
-  useEffect(() => {
-    setLoadingHistory(true);
-    assistantService.getHistory()
-      .then((history) => {
-        setMessages(history);
-      })
-      .catch(() => {
-        setToastMsg('Failed to load conversation history.');
-        setToastType('error');
-      })
-      .finally(() => setLoadingHistory(false));
-  }, []);
+  // send message
+  const send = useCallback(async (text) => {
+    const msg = (text ?? input).trim();
+    if (!msg || sending) return;
 
-  // Send message
-  const handleSend = async (text = input) => {
-    if (!text.trim() || loading) return;
-
-    const userMessage = text.trim();
     setInput('');
-    setLoading(true);
-    setApiKeyWarning(null);
+    setApiWarn(null);
+    if (textareaRef.current) { textareaRef.current.style.height = 'auto'; }
+
+    const userMsg = { id: Date.now() + '-u', role: 'user', content: msg, createdAt: new Date().toISOString() };
+    setMessages(prev => [...prev, userMsg]);
+    setSending(true);
 
     try {
-      const result = await assistantService.chat(userMessage);
-      
-      // Refresh messages to get the full history
-      const history = await assistantService.getHistory();
-      setMessages(history);
+      const history = messages
+        .filter(m => !m.isError)
+        .map(m => ({ role: m.role, content: m.content }));
+
+      const result = await aiAssistantService.chat(msg, history);
+
+      setMessages(prev => [...prev, {
+        id: Date.now() + '-a',
+        role: 'assistant',
+        content: result.response,
+        createdAt: new Date().toISOString(),
+      }]);
     } catch (err) {
-      console.error(err);
-      const errMsg = err.response?.data?.message || err.message || '';
-      if (errMsg.includes('API key') || errMsg.includes('configured')) {
-        setApiKeyWarning(errMsg);
-        setToastMsg('Groq API key configuration missing.', 'error');
-      } else {
-        setToastMsg(errMsg || 'Failed to get response from assistant.');
-        setToastType('error');
+      const errMsg = err.response?.data?.message || err.message || 'Failed to get a response.';
+      if (errMsg.toLowerCase().includes('api key') || errMsg.toLowerCase().includes('configured')) {
+        setApiWarn(errMsg);
       }
+      setMessages(prev => [...prev, {
+        id: Date.now() + '-e',
+        role: 'assistant',
+        content: errMsg,
+        createdAt: new Date().toISOString(),
+        isError: true,
+      }]);
     } finally {
-      setLoading(false);
+      setSending(false);
+      setTimeout(() => textareaRef.current?.focus(), 80);
     }
-  };
+  }, [input, sending, messages]);
 
-  // Handle Enter key
   const handleKeyDown = (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
   };
 
-  // Copy message to clipboard
-  const handleCopy = (text) => {
-    navigator.clipboard.writeText(text)
-      .then(() => {
-        setToastMsg('Copied to clipboard!');
-        setToastType('success');
-      })
-      .catch(() => {
-        setToastMsg('Failed to copy to clipboard.');
-        setToastType('error');
-      });
-  };
-
-  // Clear history
-  const handleClearHistory = () => {
-    if (window.confirm('Are you sure you want to clear all conversation history?')) {
-      assistantService.clearHistory()
-        .then(() => {
-          setMessages([]);
-          setToastMsg('Conversation history cleared!');
-          setToastType('success');
-        })
-        .catch(() => {
-          setToastMsg('Failed to clear history.');
-          setToastType('error');
-        });
-    }
+  const handleClear = () => {
+    setMessages([]);
+    setApiWarn(null);
+    setToast({ msg: 'Conversation cleared.', type: 'success' });
   };
 
   return (
-    <div className="aia-root">
-      {toastMsg && <Toast message={toastMsg} type={toastType} onClose={() => setToastMsg(null)} />}
+    <div className="aca-root">
+      {toast && <Toast message={toast.msg} type={toast.type} onClose={() => setToast(null)} />}
 
-      {/* API Key Warning Banner if missing config */}
-      {apiKeyWarning && (
-        <div className="aia-warning-card">
-          <AlertTriangle className="aia-warning-card__icon" />
+      {/* ── Header ── */}
+      <div className="aca-header">
+        <div className="aca-header__left">
+          <span className="aca-header__dot" />
+          <h2 className="aca-header__title">AI CRM Assistant</h2>
+          <span className="aca-header__subtitle">Ask anything about your CRM data</span>
+        </div>
+        <div className="aca-header__right">
+          <div className="aca-status-badge">
+            <span className="aca-status-badge__dot" />
+            Groq
+          </div>
+          <button
+            type="button"
+            className="aca-clear-btn"
+            onClick={handleClear}
+            disabled={messages.length === 0}
+          >
+            <Trash2 style={{ width: '0.6875rem', height: '0.6875rem' }} />
+            Clear
+          </button>
+        </div>
+      </div>
+
+      {/* ── API warning ── */}
+      {apiWarn && (
+        <div className="aca-api-warning">
+          <AlertTriangle className="aca-api-warning__icon" />
           <div>
-            <h4 className="aia-warning-card__title">Groq API Configuration Missing</h4>
-            <p className="aia-warning-card__text">
-              The backend has encountered an authentication issue. To activate the AI assistant, configure a valid API key inside the root directory .env file and restart the server:
+            <p className="aca-api-warning__title">Groq API key missing</p>
+            <p className="aca-api-warning__text">
+              Add <code style={{ color: '#818cf8' }}>GROQ_API_KEY</code> to your <code style={{ color: '#818cf8' }}>.env</code> file and restart the server.
             </p>
-            <code className="aia-warning-card__code">GROQ_API_KEY="gsk_yourKeyHere..."</code>
           </div>
         </div>
       )}
-      {/* Chat Container */}
-      <div className="aia-chat-container">
-        {/* Messages */}
-        <div className="aia-messages">
-          {loadingHistory ? (
-            <div className="aia-welcome">
-              <div className="dp-loading__spinner" />
-              <p className="dp-loading__text">Loading conversation...</p>
-            </div>
-          ) : messages.length === 0 ? (
-            <div className="aia-welcome">
-              <div className="aia-welcome__icon">
-                <Brain style={{ width: '2rem', height: '2rem' }} />
-              </div>
-              <h3 className="aia-welcome__title">Welcome to ClientSphere AI</h3>
-              <p className="aia-welcome__subtitle">
-                Your intelligent CRM assistant is ready to help. Ask questions about your leads, clients, tasks, or pipeline.
-              </p>
 
-              {/* Suggestions */}
-              <div className="aia-suggestions">
-                {suggestions.map((s, idx) => {
-                  const Icon = s.icon;
-                  return (
-                    <button
-                      key={idx}
-                      className="aia-suggestion"
-                      onClick={() => handleSend(s.text)}
-                    >
-                      <Icon className="aia-suggestion__icon" style={{ width: '1rem', height: '1rem' }} />
-                      <p className="aia-suggestion__text">{s.text}</p>
-                    </button>
-                  );
-                })}
+      {/* ── Body ── */}
+      <div className="aca-body">
+        <div className="aca-messages">
+
+          {/* Empty / welcome */}
+          {messages.length === 0 && !sending && (
+            <div className="aca-welcome">
+              <Bot className="aca-welcome__icon" />
+              <p className="aca-welcome__title">
+                {user?.name ? 'Hello, ' + user.name.split(' ')[0] + '.' : 'Hello.'} How can I help?
+              </p>
+              <p className="aca-welcome__desc">
+                Ask about leads, clients, tasks, pipeline deals, or generate email content.
+              </p>
+              <div className="aca-suggestions">
+                {SUGGESTIONS.map((s, i) => (
+                  <button key={i} type="button" className="aca-suggestion" onClick={() => send(s)}>
+                    {s}
+                  </button>
+                ))}
               </div>
             </div>
-          ) : (
-            messages.map((msg, idx) => (
-              <div key={idx} className={`aia-message aia-message--${msg.role}`}>
-                <div className={`aia-message__avatar aia-message__avatar--${msg.role}`}>
-                  {msg.role === 'assistant' ? (
-                    <Brain style={{ width: '1rem', height: '1rem' }} />
-                  ) : (
-                    <Users style={{ width: '1rem', height: '1rem' }} />
-                  )}
-                </div>
-                <div className={`aia-message__content aia-message__content--${msg.role}`}>
-                  <div style={{ whiteSpace: 'pre-wrap' }}>{msg.content}</div>
-                  {msg.role === 'assistant' && (
-                    <div className="aia-message__actions">
-                      <button
-                        className="aia-copy-btn"
-                        onClick={() => handleCopy(msg.content)}
-                      >
-                        <Copy style={{ width: '0.75rem', height: '0.75rem' }} />
-                        Copy
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
-            ))
           )}
+
+          {/* Messages */}
+          {messages.map(msg => (
+            <div key={msg.id} className={'aca-row aca-row--' + msg.role}>
+              <span className="aca-row__label">
+                {msg.role === 'user' ? (user?.name?.split(' ')[0] || 'You') : 'Assistant'}
+              </span>
+              <div className={'aca-bubble' + (msg.isError ? ' aca-bubble--error' : '')}>
+                {msg.content}
+              </div>
+              <div className="aca-row__meta">
+                <span className="aca-row__time">{formatTime(msg.createdAt)}</span>
+                {msg.role === 'assistant' && !msg.isError && <CopyBtn text={msg.content} />}
+              </div>
+            </div>
+          ))}
 
           {/* Typing indicator */}
-          {loading && (
-            <div className="aia-typing">
-              <div className="aia-message__avatar aia-message__avatar--assistant">
-                <Brain style={{ width: '1rem', height: '1rem' }} />
-              </div>
-              <div className="aia-typing__content">
-                <div className="aia-typing__dot" />
-                <div className="aia-typing__dot" />
-                <div className="aia-typing__dot" />
+          {sending && (
+            <div className="aca-typing">
+              <span className="aca-typing__label">Assistant</span>
+              <div className="aca-typing__dots">
+                <div className="aca-typing__dot" />
+                <div className="aca-typing__dot" />
+                <div className="aca-typing__dot" />
               </div>
             </div>
           )}
 
-          <div ref={messagesEndRef} />
+          <div ref={endRef} />
         </div>
 
-        {/* Input Area */}
-        <div className="aia-input-area">
-          <textarea
-            className="aia-input"
-            placeholder="Ask a question about your CRM..."
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            disabled={loading}
-            rows={1}
-          />
-          <button
-            className="aia-send-btn"
-            onClick={() => handleSend()}
-            disabled={loading || !input.trim()}
-          >
-            <Send style={{ width: '1rem', height: '1rem' }} />
-            Send
-          </button>
+        {/* ── Input ── */}
+        <div className="aca-input-area">
+          <form className="aca-input-row" onSubmit={e => { e.preventDefault(); send(); }}>
+            <div className="aca-input-wrap">
+              <textarea
+                ref={textareaRef}
+                className="aca-textarea"
+                placeholder="Ask about your leads, clients, tasks, or pipeline..."
+                value={input}
+                onChange={handleInput}
+                onKeyDown={handleKeyDown}
+                disabled={sending}
+                rows={1}
+                maxLength={2000}
+              />
+            </div>
+            <button
+              type="submit"
+              className="aca-send-btn"
+              disabled={sending || !input.trim()}
+              title="Send (Enter)"
+            >
+              <Send style={{ width: '0.8125rem', height: '0.8125rem' }} />
+            </button>
+          </form>
+          <div className="aca-input-foot">
+            <span className="aca-input-foot__left">llama-3.3-70b-versatile</span>
+            <div className="aca-input-foot__right">
+              <span className="aca-kbd">Enter</span> send &nbsp;
+              <span className="aca-kbd">Shift+Enter</span> newline
+            </div>
+          </div>
         </div>
       </div>
     </div>

@@ -137,9 +137,28 @@ export const aiEmailService = {
   },
 };
 
-export const assistantService = {
-  chat: async (message) => {
-    const res = await api.post('/assistant/chat', { message });
+export const aiLeadScoringService = {
+  scoreLead: async (leadId) => {
+    const res = await api.post('/ai/score-lead', { leadId });
+    return res.data;
+  },
+  scoreAllLeads: async () => {
+    const res = await api.post('/ai/score-all-leads');
+    return res.data;
+  },
+  getLeadInsights: async (id) => {
+    const res = await api.get('/ai/lead-insights/' + id);
+    return res.data;
+  },
+  getScoringStats: async () => {
+    const res = await api.get('/ai/lead-scoring-stats');
+    return res.data;
+  },
+};
+
+export const aiAssistantService = {
+  chat: async (message, conversationHistory = []) => {
+    const res = await api.post('/assistant/chat', { message, conversationHistory });
     return res.data;
   },
   getHistory: async () => {

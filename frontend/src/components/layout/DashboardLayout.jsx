@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import {
@@ -12,13 +12,12 @@ import {
   UserPlus,
   CheckSquare,
   Layers,
-  LogOut,
   Menu,
   X,
-  Plus,
   Mail,
   ShieldCheck,
-  Brain
+  Brain,
+  Bot,
 } from 'lucide-react';
 
 export const DashboardLayout = ({ children }) => {
@@ -33,8 +32,9 @@ export const DashboardLayout = ({ children }) => {
     { name: 'Leads', to: '/leads', icon: UserPlus },
     { name: 'Tasks', to: '/tasks', icon: CheckSquare },
     { name: 'Sales Pipeline', to: '/pipeline', icon: Layers },
-    { name: 'AI Assistant', to: '/ai-assistant', icon: Brain },
     { name: 'Email Generator', to: '/email-generator', icon: Mail },
+    { name: 'Lead Scoring', to: '/ai-lead-scoring', icon: Brain },
+    { name: 'AI Assistant', to: '/ai-assistant', icon: Bot },
   ];
 
   const handleLogout = () => {
@@ -45,7 +45,8 @@ export const DashboardLayout = ({ children }) => {
   const getPageTitle = () => {
     const currentPath = location.pathname;
     if (currentPath === '/email-generator') return 'AI Email Generator';
-    if (currentPath === '/ai-assistant') return 'AI Assistant';
+    if (currentPath === '/ai-lead-scoring') return 'AI Lead Scoring';
+    if (currentPath === '/ai-assistant') return 'AI CRM Assistant';
     const match = navigation.find(item => item.to === currentPath);
     return match ? match.name : 'ClientSphere';
   };

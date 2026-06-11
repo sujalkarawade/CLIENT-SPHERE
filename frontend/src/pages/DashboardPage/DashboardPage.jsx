@@ -5,9 +5,10 @@
 
 import React, { useState, useEffect } from 'react';
 import './DashboardPage.css';
-import { dashboardService } from '../../services/api';
+import { dashboardService, aiLeadScoringService } from '../../services/api';
 import { Toast } from '../../components/common/Toast';
-import { Users, UserCheck, ClipboardList, Coins, TrendingUp, Inbox } from 'lucide-react';
+import { Users, UserCheck, ClipboardList, Coins, TrendingUp, Inbox, Brain, Flame, Thermometer, Snowflake, BarChart3, ChevronRight, Bot } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, PieChart, Pie, Cell,
@@ -17,14 +18,20 @@ const CHR_COLORS = ['#6366f1', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#ef4
 
 export const DashboardPage = () => {
   const [stats, setStats] = useState(null);
+  const [aiStats, setAiStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [toastMsg, setToastMsg] = useState(null);
   const [toastType, setToastType] = useState('success');
+  const navigate = useNavigate();
 
   useEffect(() => {
-    dashboardService.getStats()
-      .then((statsData) => {
+    Promise.all([
+      dashboardService.getStats(),
+      aiLeadScoringService.getScoringStats().catch(() => null),
+    ])
+      .then(([statsData, aiData]) => {
         setStats(statsData);
+        setAiStats(aiData);
       })
       .catch(() => {
         setToastMsg('Failed to load dashboard data.');
@@ -69,6 +76,14 @@ export const DashboardPage = () => {
           <p className="dp-banner__subtitle">
             Real-time insights aggregated across standard business pipelines.
           </p>
+          <button
+            className="dp-ask-ai-btn"
+            onClick={() => navigate('/ai-assistant')}
+            type="button"
+          >
+            <Bot style={{ width: '0.875rem', height: '0.875rem' }} />
+            Ask AI Assistant
+          </button>
         </div>
       </div>
 
@@ -176,6 +191,122 @@ export const DashboardPage = () => {
           </div>
         </div>
       </div>
+
+      {/* ── AI Lead Scoring Widgets ─────────────────────────────────────── */}
+      {aiStats && (
+        <>
+          {/* AI Score KPI row */}
+          <div className="dp-ai-section-header">
+            <div className="dp-ai-section-header__left">
+              <Brain className="dp-ai-section-header__icon" />
+              <div>
+                <h3 className="dp-ai-section-header__title">AI Lead Intelligence</h3>
+                <p className="dp-ai-section-header__sub">Groq-powered lead scoring summary</p>
+              </div>
+            </div>
+            <button
+              className="dp-ai-section-header__link"
+              onClick={() => navigate('/ai-lead-scoring')}
+            >
+              View Scoring Module
+              <ChevronRight style={{ width: '0.875rem', height: '0.875rem' }} />
+            </button>
+          </div>
+
+          <div className="dp-ai-kpi-grid">
+            {[
+              { label: 'Hot Leads',    value: aiStats.hotLeads,    icon: Flame,       color: '#10b981', bg: 'rgba(6,78,59,0.25)',    border: 'rgba(16,185,129,0.2)', meta: 'Score 80–100' },
+              { label: 'Warm Leads',   value: aiStats.warmLeads,   icon: Thermometer, color: '#f59e0b', bg: 'rgba(120,53,15,0.25)',  border: 'rgba(245,158,11,0.2)', meta: 'Score 50–79' },
+              { label: 'Cold Leads',   value: aiStats.coldLeads,   icon: Snowflake,   color: '#818cf8', bg: 'rgba(30,27,75,0.25)',   border: 'rgba(99,102,241,0.2)', meta: 'Score 0–49' },
+              { label: 'Avg AI Score', value: aiStats.avgScore,    icon: BarChart3,   color: '#c084fc', bg: 'rgba(46,16,101,0.25)',  border: 'rgba(139,92,246,0.2)', meta: 'Across scored leads' },
+            ].map(({ label, value, icon: Icon, color, bg, border, meta }) => (
+              <div key={label} className="dp-ai-kpi-card" style={{ borderColor: border, background: bg }}>
+                <div className="dp-kpi-card__top">
+                  <span className="dp-kpi-card__label">{label}</span>
+                  <div className="dp-kpi-card__icon-wrap" style={{ borderColor: border }}>
+                    <Icon style={{ width: '0.875rem', height: '0.875rem', color }} />
+                  </div>
+                </div>
+                <div>
+                  <p className="dp-kpi-card__value" style={{ color }}>{value}</p>
+                  <p className="dp-kpi-card__meta">{meta}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Top Scoring Leads table */}
+          {aiStats.topLeads?.length > 0 && (
+            <div className="dp-chart-card">
+              <div className="dp-chart-card__header">
+                <div>
+                  <h3 className="dp-chart-card__title">Top Scoring Leads</h3>
+                  <p className="dp-chart-card__subtitle">Highest AI-scored prospects by conversion potential</p>
+                </div>
+                <span className="dp-chart-card__badge">AI Ranked</span>
+              </div>
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ minWidth: '100%', borderCollapse: 'collapse', fontSize: '0.75rem', color: '#d4d4d8', textAlign: 'left' }}>
+                  <thead>
+                    <tr style={{ background: '#18181b', fontSize: '0.5625rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#71717a', borderBottom: '1px solid #27272a' }}>
+                      <th style={{ padding: '0.625rem 1rem' }}>Lead</th>
+                      <th style={{ padding: '0.625rem 1rem' }}>Category</th>
+                      <th style={{ padding: '0.625rem 1rem' }}>AI Score</th>
+                      <th style={{ padding: '0.625rem 1rem' }}>Conv. Prob.</th>
+                      <th style={{ padding: '0.625rem 1rem' }}>Next Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {aiStats.topLeads.map((lead) => {
+                      const catColor = lead.aiCategory === 'Hot' ? '#34d399' : lead.aiCategory === 'Warm' ? '#fbbf24' : '#818cf8';
+                      const catBg    = lead.aiCategory === 'Hot' ? 'rgba(6,78,59,0.4)' : lead.aiCategory === 'Warm' ? 'rgba(120,53,15,0.4)' : 'rgba(30,27,75,0.4)';
+                      const catBorder= lead.aiCategory === 'Hot' ? 'rgba(16,185,129,0.2)' : lead.aiCategory === 'Warm' ? 'rgba(245,158,11,0.2)' : 'rgba(99,102,241,0.2)';
+                      return (
+                        <tr key={lead.id} style={{ borderBottom: '1px solid #27272a', transition: 'background 100ms' }}
+                          onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.02)'}
+                          onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                        >
+                          <td style={{ padding: '0.75rem 1rem' }}>
+                            <div style={{ fontWeight: 600, color: '#fff' }}>{lead.name}</div>
+                            {lead.company && <div style={{ fontSize: '0.625rem', color: '#71717a' }}>{lead.company}</div>}
+                          </td>
+                          <td style={{ padding: '0.75rem 1rem' }}>
+                            <span style={{ display: 'inline-flex', padding: '0.175rem 0.625rem', borderRadius: '9999px', fontSize: '0.625rem', fontWeight: 700, color: catColor, background: catBg, border: '1px solid ' + catBorder }}>
+                              {lead.aiCategory} Lead
+                            </span>
+                          </td>
+                          <td style={{ padding: '0.75rem 1rem' }}>
+                            <span style={{ fontFamily: 'monospace', fontWeight: 700, color: catColor, fontSize: '0.8125rem' }}>
+                              {lead.aiScore}
+                            </span>
+                            <span style={{ color: '#52525b', fontSize: '0.625rem' }}>/100</span>
+                          </td>
+                          <td style={{ padding: '0.75rem 1rem' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', width: '6rem' }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.5625rem', color: '#71717a' }}>
+                                <span>Probability</span>
+                                <span style={{ fontFamily: 'monospace', color: catColor }}>{lead.conversionProbability}%</span>
+                              </div>
+                              <div style={{ height: '0.25rem', background: '#27272a', borderRadius: '9999px', overflow: 'hidden' }}>
+                                <div style={{ height: '100%', width: lead.conversionProbability + '%', background: catColor, borderRadius: '9999px' }} />
+                              </div>
+                            </div>
+                          </td>
+                          <td style={{ padding: '0.75rem 1rem', maxWidth: '14rem' }}>
+                            <span style={{ fontSize: '0.6875rem', color: '#a1a1aa', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                              {lead.recommendedAction || '—'}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 };

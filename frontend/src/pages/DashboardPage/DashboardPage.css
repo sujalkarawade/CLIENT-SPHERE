@@ -71,6 +71,30 @@
   max-width: 36rem;
 }
 
+.dp-ask-ai-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  margin-top: 0.875rem;
+  padding: 0.4375rem 1rem;
+  border-radius: 0.375rem;
+  background: linear-gradient(135deg, rgba(99,102,241,0.15), rgba(139,92,246,0.1));
+  border: 1px solid rgba(99,102,241,0.35);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: #818cf8;
+  cursor: pointer;
+  transition: all 150ms;
+}
+.dp-ask-ai-btn:hover {
+  background: linear-gradient(135deg, rgba(99,102,241,0.25), rgba(139,92,246,0.18));
+  border-color: rgba(99,102,241,0.55);
+  color: #a5b4fc;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px -4px rgba(99,102,241,0.3);
+}
+.dp-ask-ai-btn:active { transform: translateY(0); }
+
 /* KPI grid */
 .dp-kpi-grid {
   display: grid;
@@ -275,3 +299,79 @@
   to   { opacity: 1; transform: translateY(0); }
 }
 
+
+/* ── AI Lead Scoring Dashboard Widgets ────────────────────────────── */
+
+.dp-ai-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 0.5rem;
+  border-top: 1px solid #27272a;
+}
+
+.dp-ai-section-header__left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.dp-ai-section-header__icon {
+  width: 1rem;
+  height: 1rem;
+  color: #6366f1;
+  flex-shrink: 0;
+}
+
+.dp-ai-section-header__title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+.dp-ai-section-header__sub {
+  font-size: 0.5625rem;
+  color: #71717a;
+  margin-top: 0.0625rem;
+}
+
+.dp-ai-section-header__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.625rem;
+  font-weight: 600;
+  color: #6366f1;
+  background: transparent;
+  border: 1px solid rgba(99,102,241,0.3);
+  border-radius: 0.25rem;
+  padding: 0.25rem 0.625rem;
+  cursor: pointer;
+  transition: all 150ms;
+  white-space: nowrap;
+}
+.dp-ai-section-header__link:hover {
+  background: rgba(99,102,241,0.08);
+  border-color: rgba(99,102,241,0.5);
+  color: #818cf8;
+}
+
+.dp-ai-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+}
+@media (min-width: 768px)  { .dp-ai-kpi-grid { grid-template-columns: repeat(4, 1fr); } }
+
+.dp-ai-kpi-card {
+  border: 1px solid #27272a;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: filter 200ms;
+}
+.dp-ai-kpi-card:hover { filter: brightness(1.08); }

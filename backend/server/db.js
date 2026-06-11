@@ -290,9 +290,40 @@ class Database {
         'CREATE TABLE IF NOT EXISTS leads (' +
         '"id" TEXT PRIMARY KEY, "name" TEXT NOT NULL, "email" TEXT NOT NULL, ' +
         '"phone" TEXT NOT NULL, "source" TEXT NOT NULL, "leadScore" INTEGER NOT NULL, ' +
-        '"status" TEXT NOT NULL, "createdAt" TEXT NOT NULL' +
+        '"status" TEXT NOT NULL, "createdAt" TEXT NOT NULL, ' +
+        '"company" TEXT, "industry" TEXT, "companySize" TEXT, "budget" TEXT, ' +
+        '"jobTitle" TEXT, "region" TEXT, "engagementLevel" TEXT, "notes" TEXT, ' +
+        '"aiScore" INTEGER, "aiCategory" TEXT, "conversionProbability" INTEGER, ' +
+        '"aiReasoning" TEXT, "recommendedAction" TEXT, "lastScoredAt" TEXT' +
         ');'
       );
+
+      // Migration: add new columns to leads table if they don't exist (for existing databases)
+      const newLeadCols = [
+        { name: 'company',               type: 'TEXT' },
+        { name: 'industry',              type: 'TEXT' },
+        { name: 'companySize',           type: 'TEXT' },
+        { name: 'budget',                type: 'TEXT' },
+        { name: 'jobTitle',              type: 'TEXT' },
+        { name: 'region',               type: 'TEXT' },
+        { name: 'engagementLevel',       type: 'TEXT' },
+        { name: 'notes',                 type: 'TEXT' },
+        { name: 'aiScore',               type: 'INTEGER' },
+        { name: 'aiCategory',            type: 'TEXT' },
+        { name: 'conversionProbability', type: 'INTEGER' },
+        { name: 'aiReasoning',           type: 'TEXT' },
+        { name: 'recommendedAction',     type: 'TEXT' },
+        { name: 'lastScoredAt',          type: 'TEXT' },
+      ];
+      for (const col of newLeadCols) {
+        try {
+          await this.pool.query(
+            'ALTER TABLE leads ADD COLUMN IF NOT EXISTS "' + col.name + '" ' + col.type
+          );
+        } catch (e) {
+          // Column may already exist in older PG versions — safe to ignore
+        }
+      }
 
       await this.pool.query(
         'CREATE TABLE IF NOT EXISTS tasks (' +
@@ -481,8 +512,16 @@ class Database {
         createdAt: new Date().toISOString()
       };
       await this.pool.query(
-        'INSERT INTO leads ("id", "name", "email", "phone", "source", "leadScore", "status", "createdAt") VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
-        [newLead.id, newLead.name, newLead.email, newLead.phone, newLead.source, newLead.leadScore, newLead.status, newLead.createdAt]
+        'INSERT INTO leads ("id", "name", "email", "phone", "source", "leadScore", "status", "createdAt", ' +
+        '"company", "industry", "companySize", "budget", "jobTitle", "region", "engagementLevel", "notes") ' +
+        'VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)',
+        [
+          newLead.id, newLead.name, newLead.email, newLead.phone, newLead.source,
+          newLead.leadScore, newLead.status, newLead.createdAt,
+          newLead.company || null, newLead.industry || null, newLead.companySize || null,
+          newLead.budget || null, newLead.jobTitle || null, newLead.region || null,
+          newLead.engagementLevel || null, newLead.notes || null
+        ]
       );
       return newLead;
     },
@@ -492,8 +531,21 @@ class Database {
       if (!current) throw new Error('Lead with id ' + id + ' not found');
       const updated = { ...current, ...data };
       await this.pool.query(
-        'UPDATE leads SET "name" = $1, "email" = $2, "phone" = $3, "source" = $4, "leadScore" = $5, "status" = $6 WHERE id = $7',
-        [updated.name, updated.email, updated.phone, updated.source, updated.leadScore, updated.status, id]
+        'UPDATE leads SET "name" = $1, "email" = $2, "phone" = $3, "source" = $4, "leadScore" = $5, "status" = $6, ' +
+        '"company" = $7, "industry" = $8, "companySize" = $9, "budget" = $10, "jobTitle" = $11, "region" = $12, ' +
+        '"engagementLevel" = $13, "notes" = $14, "aiScore" = $15, "aiCategory" = $16, "conversionProbability" = $17, ' +
+        '"aiReasoning" = $18, "recommendedAction" = $19, "lastScoredAt" = $20 WHERE id = $21',
+        [
+          updated.name, updated.email, updated.phone, updated.source, updated.leadScore, updated.status,
+          updated.company || null, updated.industry || null, updated.companySize || null,
+          updated.budget || null, updated.jobTitle || null, updated.region || null,
+          updated.engagementLevel || null, updated.notes || null,
+          updated.aiScore !== undefined ? updated.aiScore : null,
+          updated.aiCategory || null,
+          updated.conversionProbability !== undefined ? updated.conversionProbability : null,
+          updated.aiReasoning || null, updated.recommendedAction || null, updated.lastScoredAt || null,
+          id
+        ]
       );
       return updated;
     },
