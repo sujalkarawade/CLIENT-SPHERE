@@ -6,6 +6,7 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { ThemeProvider } from './context/ThemeContext';
 import { ProtectedRoute } from './routes/index';
 import { DashboardLayout } from './components/layout/DashboardLayout';
 
@@ -20,8 +21,9 @@ import { AILeadScoringPage } from './pages/AILeadScoringPage/AILeadScoringPage';
 import { AIAssistantPage } from './pages/AIAssistantPage/AIAssistantPage';
 export default function App() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
+    <ThemeProvider>
+      <AuthProvider>
+        <BrowserRouter>
         <Routes>
           {/* Protected Client Workspace Core */}
           <Route
@@ -107,7 +109,8 @@ export default function App() {
           {/* Route Fail-safes fallback */}
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
-      </BrowserRouter>
-    </AuthProvider>
+          </BrowserRouter>
+        </AuthProvider>
+      </ThemeProvider>
   );
 }

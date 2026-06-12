@@ -6,6 +6,7 @@
 import { useState } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { useTheme } from '../../context/ThemeContext';
 import {
   LayoutDashboard,
   Users,
@@ -18,10 +19,13 @@ import {
   ShieldCheck,
   Brain,
   Bot,
+  Sun,
+  Moon,
 } from 'lucide-react';
 
 export const DashboardLayout = ({ children }) => {
   const { user, logout } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -52,7 +56,12 @@ export const DashboardLayout = ({ children }) => {
   };
 
   return (
-    <div className="flex min-h-screen bg-[#09090b] text-zinc-100 font-sans selection:bg-[#18181b] selection:text-white">
+    <div className="flex min-h-screen font-sans"
+      style={{
+        backgroundColor: 'var(--bg-primary)',
+        color: 'var(--text-primary)',
+      }}
+    >
       {/* Background radial glow removed for high density theme */}
 
       {/* MOBILE SIDEBAR DRAWERS */}
@@ -64,16 +73,30 @@ export const DashboardLayout = ({ children }) => {
             onClick={() => setSidebarOpen(false)}
           />
           {/* Drawer content */}
-          <div className="relative flex flex-col w-72 max-w-xs bg-[#09090b] border-r border-[#27272a] p-6 z-50">
+          <div className="relative flex flex-col w-72 max-w-xs p-6 z-50"
+            style={{
+              backgroundColor: 'var(--sidebar-bg)',
+              borderRight: '1px solid var(--border-color)',
+            }}
+          >
             <div className="flex items-center justify-between mb-8">
               <div className="flex items-center gap-2">
-                <span className="font-display font-semibold text-lg tracking-wide bg-gradient-to-r from-white to-zinc-400 bg-clip-text text-transparent">
+                <span className="font-display font-semibold text-lg tracking-wide"
+                  style={{
+                    background: 'linear-gradient(to right, var(--text-primary), var(--text-muted))',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                  }}
+                >
                   ClientSphere
                 </span>
               </div>
               <button
                 onClick={() => setSidebarOpen(false)}
-                className="text-zinc-400 hover:text-white p-1 rounded hover:bg-white/5"
+                className="p-1 rounded"
+                style={{ color: 'var(--text-subtle)' }}
+                onMouseEnter={e => e.currentTarget.style.color = 'var(--text-primary)'}
+                onMouseLeave={e => e.currentTarget.style.color = 'var(--text-subtle)'}
               >
                 <X className="w-5 h-5" />
               </button>
@@ -88,11 +111,27 @@ export const DashboardLayout = ({ children }) => {
                     key={link.name}
                     to={link.to}
                     onClick={() => setSidebarOpen(false)}
-                    className={'flex items-center gap-3 px-4 py-2 rounded-md text-sm font-medium transition-all duration-150 ' +
+                    className={'flex items-center gap-3 px-4 py-2 rounded-md text-sm font-medium transition-all duration-150 border ' +
                       (isActive
-                        ? 'bg-[#18181b] text-white border border-[#27272a] shadow-sm'
-                        : 'text-zinc-400 hover:text-white hover:bg-white/5 border border-transparent')
-                    }
+                        ? 'shadow-sm'
+                        : 'border-transparent')}
+                    style={{
+                      backgroundColor: isActive ? 'var(--nav-active-bg)' : 'transparent',
+                      color: isActive ? 'var(--text-primary)' : 'var(--text-muted)',
+                      borderColor: isActive ? 'var(--border-color)' : 'transparent',
+                    }}
+                    onMouseEnter={e => {
+                      if (!isActive) {
+                        e.currentTarget.style.backgroundColor = 'var(--bg-hover)';
+                        e.currentTarget.style.color = 'var(--text-primary)';
+                      }
+                    }}
+                    onMouseLeave={e => {
+                      if (!isActive) {
+                        e.currentTarget.style.backgroundColor = 'transparent';
+                        e.currentTarget.style.color = 'var(--text-muted)';
+                      }
+                    }}
                   >
                     <Icon className="w-4 h-4 shrink-0 opacity-70" />
                     {link.name}
@@ -101,14 +140,30 @@ export const DashboardLayout = ({ children }) => {
               })}
             </nav>
 
-            <div className="mt-auto border-t border-[#27272a] pt-4">
+            <div className="mt-auto pt-4"
+              style={{ borderTop: '1px solid var(--border-color)' }}
+            >
               <div className="flex items-center gap-3 px-2">
-                <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-[#18181b] to-[#27272a] border border-[#27272a] flex items-center justify-center font-display font-bold text-sm text-white">
+                <div className="w-9 h-9 rounded-full flex items-center justify-center font-display font-bold text-sm"
+                  style={{
+                    background: 'linear-gradient(to top right, var(--bg-secondary), var(--bg-tertiary))',
+                    border: '1px solid var(--border-color)',
+                    color: 'var(--text-primary)',
+                  }}
+                >
                   {user?.name?.[0]?.toUpperCase() || 'U'}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium text-zinc-200 truncate">{user?.name}</p>
-                  <p className="text-xs text-zinc-500 truncate">{user?.email}</p>
+                  <p className="text-sm font-medium truncate"
+                    style={{ color: 'var(--text-secondary)' }}
+                  >
+                    {user?.name}
+                  </p>
+                  <p className="text-xs truncate"
+                    style={{ color: 'var(--text-subtle)' }}
+                  >
+                    {user?.email}
+                  </p>
                 </div>
               </div>
             </div>
@@ -117,9 +172,16 @@ export const DashboardLayout = ({ children }) => {
       )}
 
       {/* DESKTOP PERMANENT SIDEBAR */}
-      <aside className="hidden lg:flex flex-col w-48 bg-[#09090b] border-r border-[#27272a] shrink-0 py-4 px-3 sticky top-0 h-screen z-30">
+      <aside className="hidden lg:flex flex-col w-48 shrink-0 py-4 px-3 sticky top-0 h-screen z-30"
+        style={{
+          backgroundColor: 'var(--sidebar-bg)',
+          borderRight: '1px solid var(--border-color)',
+        }}
+      >
         <div className="flex items-center gap-2.5 mb-6 px-2">
-          <span className="font-display font-bold text-base tracking-wide text-white">
+          <span className="font-display font-bold text-base tracking-wide"
+            style={{ color: 'var(--text-primary)' }}
+          >
             ClientSphere
           </span>
         </div>
@@ -133,10 +195,24 @@ export const DashboardLayout = ({ children }) => {
                 key={link.name}
                 to={link.to}
                 className={'flex items-center gap-3 px-3.5 py-2 rounded-md text-sm font-medium transition-all duration-150 border ' +
-                  (isActive
-                    ? 'bg-[#18181b] text-white border-[#27272a] shadow-sm'
-                    : 'text-zinc-400 hover:text-white hover:bg-white/5 border-transparent')
-                }
+                  (isActive ? 'shadow-sm' : 'border-transparent')}
+                style={{
+                  backgroundColor: isActive ? 'var(--nav-active-bg)' : 'transparent',
+                  color: isActive ? 'var(--text-primary)' : 'var(--text-muted)',
+                  borderColor: isActive ? 'var(--border-color)' : 'transparent',
+                }}
+                onMouseEnter={e => {
+                  if (!isActive) {
+                    e.currentTarget.style.backgroundColor = 'var(--bg-hover)';
+                    e.currentTarget.style.color = 'var(--text-primary)';
+                  }
+                }}
+                onMouseLeave={e => {
+                  if (!isActive) {
+                    e.currentTarget.style.backgroundColor = 'transparent';
+                    e.currentTarget.style.color = 'var(--text-muted)';
+                  }
+                }}
               >
                 <Icon className="w-4 h-4 shrink-0 opacity-75" />
                 {link.name}
@@ -145,14 +221,30 @@ export const DashboardLayout = ({ children }) => {
           })}
         </nav>
 
-        <div className="mt-auto border-t border-[#27272a] pt-4">
+        <div className="mt-auto pt-4"
+          style={{ borderTop: '1px solid var(--border-color)' }}
+        >
           <div className="flex items-center gap-3 px-2">
-            <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-[#18181b] to-[#27272a] flex items-center justify-center font-display font-black text-sm text-white border border-[#27272a]">
+            <div className="w-9 h-9 rounded-full flex items-center justify-center font-display font-black text-sm"
+              style={{
+                background: 'linear-gradient(to top right, var(--bg-secondary), var(--bg-tertiary))',
+                border: '1px solid var(--border-color)',
+                color: 'var(--text-primary)',
+              }}
+            >
               {user?.name?.[0]?.toUpperCase() || 'C'}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold text-zinc-200 truncate">{user?.name}</p>
-              <p className="text-xs text-zinc-500 truncate">{user?.email}</p>
+              <p className="text-sm font-semibold truncate"
+                style={{ color: 'var(--text-secondary)' }}
+              >
+                {user?.name}
+              </p>
+              <p className="text-xs truncate"
+                style={{ color: 'var(--text-subtle)' }}
+              >
+                {user?.email}
+              </p>
             </div>
           </div>
         </div>
@@ -161,30 +253,83 @@ export const DashboardLayout = ({ children }) => {
       {/* CORE WORKSPACE VIEWPORT */}
       <div className="flex-1 flex flex-col min-w-0 relative">
         {/* HEADER BAR */}
-        <header className="sticky top-0 z-20 flex h-14 items-center justify-between border-b border-[#27272a] bg-[#09090b]/80 backdrop-blur-md px-6 lg:px-8">
+        <header className="sticky top-0 z-20 flex h-14 items-center justify-between border-b backdrop-blur-md px-6 lg:px-8"
+          style={{
+            borderColor: 'var(--border-color)',
+            backgroundColor: 'var(--header-bg)',
+          }}
+        >
           <div className="flex items-center gap-4">
             <button
               onClick={() => setSidebarOpen(true)}
-              className="text-zinc-400 hover:text-white p-2.5 -ml-2.5 rounded hover:bg-white/5 lg:hidden"
+              className="p-2.5 -ml-2.5 rounded lg:hidden"
+              style={{ color: 'var(--text-subtle)' }}
+              onMouseEnter={e => e.currentTarget.style.color = 'var(--text-primary)'}
+              onMouseLeave={e => e.currentTarget.style.color = 'var(--text-subtle)'}
             >
               <Menu className="w-5 h-5" />
             </button>
-            <h1 className="font-display text-sm font-semibold text-white tracking-tight">
+            <h1 className="font-display text-sm font-semibold tracking-tight"
+              style={{ color: 'var(--text-primary)' }}
+            >
               {getPageTitle()}
             </h1>
           </div>
 
           <div className="flex items-center gap-4">
-            <div className="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full bg-zinc-900 border border-[#27272a]">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="text-[10px] font-mono tracking-tight text-zinc-400 uppercase font-semibold">
+            {/* Theme Toggle Button */}
+            <button
+              onClick={toggleTheme}
+              className="p-2 rounded-full transition-all duration-200"
+              style={{
+                color: 'var(--text-muted)',
+                backgroundColor: 'var(--bg-secondary)',
+                border: '1px solid var(--border-color)',
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.color = 'var(--text-primary)';
+                e.currentTarget.style.borderColor = 'var(--border-light)';
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.color = 'var(--text-muted)';
+                e.currentTarget.style.borderColor = 'var(--border-color)';
+              }}
+              title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+            >
+              {theme === 'dark' ? (
+                <Sun className="w-4 h-4" />
+              ) : (
+                <Moon className="w-4 h-4" />
+              )}
+            </button>
+
+            <div className="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full border"
+              style={{
+                backgroundColor: 'var(--bg-secondary)',
+                borderColor: 'var(--border-color)',
+              }}
+            >
+              <span className="w-1.5 h-1.5 rounded-full animate-pulse"
+                style={{ backgroundColor: 'var(--status-dot)' }}
+              />
+              <span className="text-[10px] font-mono tracking-tight uppercase font-semibold"
+                style={{ color: 'var(--text-subtle)' }}
+              >
                 Engine Active
               </span>
             </div>
-            <div className="sm:flex h-8 w-px bg-[#27272a] hidden" />
+            <div className="sm:flex h-8 w-px hidden"
+              style={{ backgroundColor: 'var(--border-color)' }}
+            />
             <div className="hidden sm:flex items-center gap-2">
-              <ShieldCheck className="w-4 h-4 text-zinc-400" />
-              <span className="text-xs font-medium text-zinc-400 tracking-tight">Enterprise secure</span>
+              <ShieldCheck className="w-4 h-4"
+                style={{ color: 'var(--text-muted)' }}
+              />
+              <span className="text-xs font-medium tracking-tight"
+                style={{ color: 'var(--text-subtle)' }}
+              >
+                Enterprise secure
+              </span>
             </div>
           </div>
         </header>

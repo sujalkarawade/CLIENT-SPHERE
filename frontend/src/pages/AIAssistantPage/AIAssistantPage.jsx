@@ -25,6 +25,23 @@ function formatTime(iso) {
   return new Date(iso).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
 }
 
+/** Render message text: convert **bold** to <strong>, newlines to <br /> */
+function renderContent(text) {
+  // Build entity references at runtime so formatters don't decode them
+  const a = String.fromCharCode(38); // &
+  // 1. Escape HTML entities to prevent XSS
+  const escaped = text
+    .replace(new RegExp(a, 'g'), a + 'amp;')
+    .replace(/</g, a + 'lt;')
+    .replace(/>/g, a + 'gt;')
+    .replace(/"/g, a + 'quot;');
+  // 2. Convert **text** to <strong>text</strong>
+  const withBold = escaped.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  // 3. Convert newlines to <br />
+  const withBreaks = withBold.replace(/\n/g, '<br />');
+  return withBreaks;
+}
+
 function CopyBtn({ text }) {
   const [done, setDone] = useState(false);
   const copy = async () => {
@@ -190,9 +207,10 @@ export const AIAssistantPage = () => {
               <span className="aca-row__label">
                 {msg.role === 'user' ? (user?.name?.split(' ')[0] || 'You') : 'Assistant'}
               </span>
-              <div className={'aca-bubble' + (msg.isError ? ' aca-bubble--error' : '')}>
-                {msg.content}
-              </div>
+              <div
+                className={'aca-bubble' + (msg.isError ? ' aca-bubble--error' : '')}
+                dangerouslySetInnerHTML={{ __html: renderContent(msg.content) }}
+              />
               <div className="aca-row__meta">
                 <span className="aca-row__time">{formatTime(msg.createdAt)}</span>
                 {msg.role === 'assistant' && !msg.isError && <CopyBtn text={msg.content} />}
