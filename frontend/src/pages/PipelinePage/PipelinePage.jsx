@@ -17,6 +17,9 @@ const stageHeaderMod = (stage) => {
   if (stage === 'Won')           return 'pp-col-header--won';
   if (stage === 'Lost')          return 'pp-col-header--lost';
   if (stage === 'Proposal Sent') return 'pp-col-header--proposal';
+  if (stage === 'New Lead')      return 'pp-col-header--new-lead';
+  if (stage === 'Contacted')     return 'pp-col-header--contacted';
+  if (stage === 'Qualified')     return 'pp-col-header--qualified';
   return 'pp-col-header--default';
 };
 

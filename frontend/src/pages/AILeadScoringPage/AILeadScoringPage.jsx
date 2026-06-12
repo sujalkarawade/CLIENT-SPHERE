@@ -60,7 +60,7 @@ function ScoreRing({ score, category }) {
           dominantBaseline="central"
           textAnchor="middle"
           transform="rotate(90 26 26)"
-          style={{ fontSize: '9px', fontWeight: '700', fontFamily: 'monospace', fill: '#fff' }}
+          style={{ fontSize: '9px', fontWeight: '700', fontFamily: 'monospace', fill: 'var(--text-primary)' }}
         >
           {score ?? '–'}
         </text>

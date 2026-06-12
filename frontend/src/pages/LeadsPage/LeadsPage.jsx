@@ -79,6 +79,7 @@ export const LeadsPage = () => {
   const statusModMap = {
     New: 'lp-badge--new', Contacted: 'lp-badge--contacted', Qualified: 'lp-badge--qualified',
     Proposal: 'lp-badge--proposal', Nurturing: 'lp-badge--nurturing', Unqualified: 'lp-badge--unqualified',
+    Lost: 'lp-badge--lost',
   };
 
   const getScoreMeter = (score) => {

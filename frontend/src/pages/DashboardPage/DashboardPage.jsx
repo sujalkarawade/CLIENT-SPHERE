@@ -5,6 +5,7 @@
 
 import React, { useState, useEffect } from 'react';
 import './DashboardPage.css';
+import '../AILeadScoringPage/AILeadScoringPage.css';
 import { dashboardService, aiLeadScoringService } from '../../services/api';
 import { Toast } from '../../components/common/Toast';
 import { Users, UserCheck, ClipboardList, Coins, TrendingUp, Inbox, Brain, Flame, Thermometer, Snowflake, BarChart3, ChevronRight, Bot } from 'lucide-react';
@@ -133,9 +134,9 @@ export const DashboardPage = () => {
                   <XAxis dataKey="month" stroke="#71717a" fontSize={10} tickLine={false} axisLine={false} />
                   <YAxis stroke="#71717a" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(v) => v / 1000 + 'k'} />
                   <Tooltip
-                    contentStyle={{ backgroundColor: '#18181b', border: '1px solid #27272a', borderRadius: '6px', fontSize: '11px' }}
-                    labelStyle={{ color: '#a1a1aa', fontWeight: 'bold' }}
-                    itemStyle={{ color: '#fafafa' }}
+                    contentStyle={{ backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '6px', fontSize: '11px' }}
+                    labelStyle={{ color: 'var(--text-muted)', fontWeight: 'bold' }}
+                    itemStyle={{ color: 'var(--text-primary)' }}
                     formatter={(val) => [val.toLocaleString(), 'Income']}
                   />
                   <Area type="monotone" dataKey="amount" stroke="#6366f1" strokeWidth={1.5} fillOpacity={1} fill="url(#colorRevenue)" />
@@ -166,8 +167,8 @@ export const DashboardPage = () => {
                     ))}
                   </Pie>
                   <Tooltip
-                    contentStyle={{ backgroundColor: '#18181b', border: '1px solid #27272a', borderRadius: '6px', fontSize: '11px' }}
-                    itemStyle={{ color: '#fafafa' }}
+                    contentStyle={{ backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '6px', fontSize: '11px' }}
+                    itemStyle={{ color: 'var(--text-primary)' }}
                   />
                 </PieChart>
               </ResponsiveContainer>
@@ -219,11 +220,17 @@ export const DashboardPage = () => {
               { label: 'Warm Leads',   value: aiStats.warmLeads,   icon: Thermometer, color: '#f59e0b', bg: 'rgba(120,53,15,0.25)',  border: 'rgba(245,158,11,0.2)', meta: 'Score 50–79' },
               { label: 'Cold Leads',   value: aiStats.coldLeads,   icon: Snowflake,   color: '#818cf8', bg: 'rgba(30,27,75,0.25)',   border: 'rgba(99,102,241,0.2)', meta: 'Score 0–49' },
               { label: 'Avg AI Score', value: aiStats.avgScore,    icon: BarChart3,   color: '#c084fc', bg: 'rgba(46,16,101,0.25)',  border: 'rgba(139,92,246,0.2)', meta: 'Across scored leads' },
-            ].map(({ label, value, icon: Icon, color, bg, border, meta }) => (
-              <div key={label} className="dp-ai-kpi-card" style={{ borderColor: border, background: bg }}>
+            ].map(({ label, value, icon: Icon, color, meta }) => (
+              <div key={label} className="dp-ai-kpi-card"
+                style={{
+                  borderColor: 'var(--border-color)',
+                  background: 'var(--bg-primary)',
+                  borderTop: `2px solid ${color}`,
+                }}
+              >
                 <div className="dp-kpi-card__top">
                   <span className="dp-kpi-card__label">{label}</span>
-                  <div className="dp-kpi-card__icon-wrap" style={{ borderColor: border }}>
+                  <div className="dp-kpi-card__icon-wrap">
                     <Icon style={{ width: '0.875rem', height: '0.875rem', color }} />
                   </div>
                 </div>
@@ -246,9 +253,9 @@ export const DashboardPage = () => {
                 <span className="dp-chart-card__badge">AI Ranked</span>
               </div>
               <div style={{ overflowX: 'auto' }}>
-                <table style={{ minWidth: '100%', borderCollapse: 'collapse', fontSize: '0.75rem', color: '#d4d4d8', textAlign: 'left' }}>
+                <table style={{ minWidth: '100%', borderCollapse: 'collapse', fontSize: '0.75rem', color: 'var(--text-secondary)', textAlign: 'left' }}>
                   <thead>
-                    <tr style={{ background: '#18181b', fontSize: '0.5625rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#71717a', borderBottom: '1px solid #27272a' }}>
+                    <tr style={{ background: 'var(--bg-secondary)', fontSize: '0.5625rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-subtle)', borderBottom: '1px solid var(--border-color)' }}>
                       <th style={{ padding: '0.625rem 1rem' }}>Lead</th>
                       <th style={{ padding: '0.625rem 1rem' }}>Category</th>
                       <th style={{ padding: '0.625rem 1rem' }}>AI Score</th>
@@ -258,42 +265,42 @@ export const DashboardPage = () => {
                   </thead>
                   <tbody>
                     {aiStats.topLeads.map((lead) => {
-                      const catColor = lead.aiCategory === 'Hot' ? '#34d399' : lead.aiCategory === 'Warm' ? '#fbbf24' : '#818cf8';
-                      const catBg    = lead.aiCategory === 'Hot' ? 'rgba(6,78,59,0.4)' : lead.aiCategory === 'Warm' ? 'rgba(120,53,15,0.4)' : 'rgba(30,27,75,0.4)';
-                      const catBorder= lead.aiCategory === 'Hot' ? 'rgba(16,185,129,0.2)' : lead.aiCategory === 'Warm' ? 'rgba(245,158,11,0.2)' : 'rgba(99,102,241,0.2)';
+                      const catMod = lead.aiCategory === 'Hot' ? 'hot' : lead.aiCategory === 'Warm' ? 'warm' : 'cold';
+                      const scoreColor = lead.aiCategory === 'Hot' ? '#10b981' : lead.aiCategory === 'Warm' ? '#f59e0b' : '#818cf8';
                       return (
-                        <tr key={lead.id} style={{ borderBottom: '1px solid #27272a', transition: 'background 100ms' }}
-                          onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.02)'}
+                        <tr key={lead.id} style={{ borderBottom: '1px solid var(--border-color)', transition: 'background 100ms' }}
+                          onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-hover)'}
                           onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                         >
                           <td style={{ padding: '0.75rem 1rem' }}>
-                            <div style={{ fontWeight: 600, color: '#fff' }}>{lead.name}</div>
-                            {lead.company && <div style={{ fontSize: '0.625rem', color: '#71717a' }}>{lead.company}</div>}
+                            <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{lead.name}</div>
+                            {lead.company && <div style={{ fontSize: '0.625rem', color: 'var(--text-subtle)' }}>{lead.company}</div>}
                           </td>
                           <td style={{ padding: '0.75rem 1rem' }}>
-                            <span style={{ display: 'inline-flex', padding: '0.175rem 0.625rem', borderRadius: '9999px', fontSize: '0.625rem', fontWeight: 700, color: catColor, background: catBg, border: '1px solid ' + catBorder }}>
+                            <span className={'als-cat-badge als-cat-badge--' + catMod}>
+                              <span className={'als-cat-badge__dot als-cat-badge__dot--' + catMod} />
                               {lead.aiCategory} Lead
                             </span>
                           </td>
                           <td style={{ padding: '0.75rem 1rem' }}>
-                            <span style={{ fontFamily: 'monospace', fontWeight: 700, color: catColor, fontSize: '0.8125rem' }}>
+                            <span style={{ fontFamily: 'monospace', fontWeight: 700, color: scoreColor, fontSize: '0.8125rem' }}>
                               {lead.aiScore}
                             </span>
-                            <span style={{ color: '#52525b', fontSize: '0.625rem' }}>/100</span>
+                            <span style={{ color: 'var(--text-subtle)', fontSize: '0.625rem' }}>/100</span>
                           </td>
                           <td style={{ padding: '0.75rem 1rem' }}>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', width: '6rem' }}>
-                              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.5625rem', color: '#71717a' }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.5625rem', color: 'var(--text-subtle)' }}>
                                 <span>Probability</span>
-                                <span style={{ fontFamily: 'monospace', color: catColor }}>{lead.conversionProbability}%</span>
+                                <span style={{ fontFamily: 'monospace', color: scoreColor }}>{lead.conversionProbability}%</span>
                               </div>
-                              <div style={{ height: '0.25rem', background: '#27272a', borderRadius: '9999px', overflow: 'hidden' }}>
-                                <div style={{ height: '100%', width: lead.conversionProbability + '%', background: catColor, borderRadius: '9999px' }} />
+                              <div style={{ height: '0.25rem', background: 'var(--bg-tertiary)', borderRadius: '9999px', overflow: 'hidden' }}>
+                                <div style={{ height: '100%', width: lead.conversionProbability + '%', background: scoreColor, borderRadius: '9999px' }} />
                               </div>
                             </div>
                           </td>
                           <td style={{ padding: '0.75rem 1rem', maxWidth: '14rem' }}>
-                            <span style={{ fontSize: '0.6875rem', color: '#a1a1aa', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                            <span style={{ fontSize: '0.6875rem', color: 'var(--text-muted)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                               {lead.recommendedAction || '—'}
                             </span>
                           </td>
