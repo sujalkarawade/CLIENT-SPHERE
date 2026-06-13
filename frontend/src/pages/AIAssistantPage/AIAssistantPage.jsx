@@ -109,9 +109,16 @@ export const AIAssistantPage = () => {
         createdAt: new Date().toISOString(),
       }]);
     } catch (err) {
-      const errMsg = err.response?.data?.message || err.message || 'Failed to get a response.';
-      if (errMsg.toLowerCase().includes('api key') || errMsg.toLowerCase().includes('configured')) {
-        setApiWarn(errMsg);
+      const rawMsg = err.response?.data?.message || err.message || 'Failed to get a response.';
+      // Give user-friendly messages for known error types
+      let errMsg = rawMsg;
+      if (rawMsg.toLowerCase().includes('request too large') || rawMsg.toLowerCase().includes('tokens per minute')) {
+        errMsg = 'Your CRM has a lot of data — the request was too large for the AI model. Try asking a more specific question (e.g. "show my top 5 leads" instead of a broad query).';
+      } else if (rawMsg.toLowerCase().includes('rate limit')) {
+        errMsg = rawMsg; // already user-friendly from our rate limiter
+      }
+      if (rawMsg.toLowerCase().includes('api key') || rawMsg.toLowerCase().includes('configured')) {
+        setApiWarn(rawMsg);
       }
       setMessages(prev => [...prev, {
         id: Date.now() + '-e',

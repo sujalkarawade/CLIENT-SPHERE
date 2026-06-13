@@ -38,7 +38,7 @@ export function detectIntent(message) {
   if (/\b(email|write|draft|compose|generate.*email|follow[- ]?up email|outreach)\b/.test(msg)) {
     return 'email_generation';
   }
-  if (/\b(lead|prospect|score|hottest|warm|cold|conversion|qualified|unqualified|top leads|highest scoring)\b/.test(msg)) {
+  if (/\b(lead|prospect|score|hottest|warm|cold|conversion|qualified|unqualified|top leads|highest scoring|how many.*lead|total.*lead|lead.*total)\b/.test(msg)) {
     return 'lead_analysis';
   }
   if (/\b(task|todo|overdue|due|pending|deadline|complete|priority|urgent)\b/.test(msg)) {
@@ -55,68 +55,81 @@ export function detectIntent(message) {
 
 /**
  * Build CRM context object from database data based on detected intent.
+ * For 'general' intent, only fetch aggregated counts — no detail rows.
  */
 export async function buildContext(intent, db) {
   const context = {};
 
   try {
-    if (intent === 'lead_analysis' || intent === 'general' || intent === 'email_generation') {
+    if (intent === 'lead_analysis' || intent === 'email_generation') {
       const leads = await db.leads.findMany();
       context.leads = leads.map(l => ({
-        id: l.id,
         name: l.name,
         company: l.company || '',
-        email: l.email,
         status: l.status,
         source: l.source,
         leadScore: l.leadScore,
         aiScore: l.aiScore,
         aiCategory: l.aiCategory,
         conversionProbability: l.conversionProbability,
-        recommendedAction: l.recommendedAction,
-        industry: l.industry || '',
-        budget: l.budget || '',
-        engagementLevel: l.engagementLevel || '',
         createdAt: l.createdAt,
       }));
     }
 
-    if (intent === 'task_query' || intent === 'general') {
+    if (intent === 'task_query') {
       const tasks = await db.tasks.findMany();
       const now = new Date();
       context.tasks = tasks.map(t => ({
-        id: t.id,
         title: t.title,
         priority: t.priority,
         status: t.status,
         dueDate: t.dueDate,
         isOverdue: t.status !== 'Completed' && new Date(t.dueDate) < now,
-        description: t.description,
       }));
     }
 
-    if (intent === 'client_query' || intent === 'general') {
+    if (intent === 'client_query') {
       const clients = await db.clients.findMany();
       context.clients = clients.map(c => ({
-        id: c.id,
         name: c.name,
         company: c.company,
-        email: c.email,
         status: c.status,
-        notes: c.notes,
-        createdAt: c.createdAt,
       }));
     }
 
-    if (intent === 'pipeline_query' || intent === 'general') {
+    if (intent === 'pipeline_query') {
       const pipelines = await db.pipelines.findMany();
       context.pipeline = pipelines.map(p => ({
-        id: p.id,
         title: p.title,
         value: p.value,
         stage: p.stage,
-        createdAt: p.createdAt,
       }));
+    }
+
+    // For 'general', only provide high-level counts — no detail records
+    if (intent === 'general') {
+      const [leads, tasks, clients, pipelines] = await Promise.all([
+        db.leads.findMany(),
+        db.tasks.findMany(),
+        db.clients.findMany(),
+        db.pipelines.findMany(),
+      ]);
+      const now = new Date();
+      context.summary = {
+        totalLeads: leads.length,
+        totalTasks: tasks.length,
+        activeTasks: tasks.filter(t => t.status !== 'Completed').length,
+        overdueTasks: tasks.filter(t => t.status !== 'Completed' && new Date(t.dueDate) < now).length,
+        totalClients: clients.length,
+        activeClients: clients.filter(c => c.status === 'Active').length,
+        totalDeals: pipelines.length,
+        wonDeals: pipelines.filter(p => p.stage === 'Won').length,
+        wonRevenue: pipelines.filter(p => p.stage === 'Won').reduce((s, p) => s + p.value, 0),
+        pipelineValue: pipelines.filter(p => !['Won','Lost'].includes(p.stage)).reduce((s, p) => s + p.value, 0),
+        hotLeads: leads.filter(l => l.aiCategory === 'Hot').length,
+        warmLeads: leads.filter(l => l.aiCategory === 'Warm').length,
+        coldLeads: leads.filter(l => l.aiCategory === 'Cold').length,
+      };
     }
   } catch (err) {
     console.error('Context builder error:', err);
@@ -125,104 +138,87 @@ export async function buildContext(intent, db) {
   return context;
 }
 
+// Max detail records per entity — keeps prompts well within 12k TPM
+const MAX_DETAIL_RECORDS = 8;
+
 /**
  * Format CRM context as a structured string to inject into the system prompt.
+ * general intent → summary stats only (no detail rows)
+ * specific intents → summary + up to MAX_DETAIL_RECORDS rows
  */
 function formatContextForPrompt(context) {
   const lines = [];
 
+  // General/overview — summary only, no detail rows
+  if (context.summary) {
+    const s = context.summary;
+    lines.push('CRM SNAPSHOT:');
+    lines.push('Leads: ' + s.totalLeads + ' total | Hot:' + s.hotLeads + ' Warm:' + s.warmLeads + ' Cold:' + s.coldLeads);
+    lines.push('Tasks: ' + s.totalTasks + ' total | Active:' + s.activeTasks + ' | Overdue:' + s.overdueTasks);
+    lines.push('Clients: ' + s.totalClients + ' total | Active:' + s.activeClients);
+    lines.push('Pipeline: ' + s.totalDeals + ' deals | Won:' + s.wonDeals + ' ($' + s.wonRevenue.toLocaleString() + ') | Active value:$' + s.pipelineValue.toLocaleString());
+    return lines.join('\n');
+  }
+
   if (context.leads?.length) {
-    const now = new Date();
-    const thisMonth = now.getMonth();
-    const thisYear = now.getFullYear();
-    const addedThisMonth = context.leads.filter(l => {
-      const d = new Date(l.createdAt);
-      return d.getMonth() === thisMonth && d.getFullYear() === thisYear;
-    }).length;
     const hot = context.leads.filter(l => l.aiCategory === 'Hot').length;
     const warm = context.leads.filter(l => l.aiCategory === 'Warm').length;
     const cold = context.leads.filter(l => l.aiCategory === 'Cold').length;
-    const scored = context.leads.filter(l => l.aiScore !== null && l.aiScore !== undefined);
-    const avgScore = scored.length
-      ? Math.round(scored.reduce((s, l) => s + l.aiScore, 0) / scored.length)
-      : null;
-    const topLeads = [...context.leads]
-      .filter(l => l.aiScore !== null && l.aiScore !== undefined)
-      .sort((a, b) => (b.aiScore || 0) - (a.aiScore || 0))
-      .slice(0, 5);
+    const scored = context.leads.filter(l => l.aiScore != null);
+    const avgScore = scored.length ? Math.round(scored.reduce((s, l) => s + l.aiScore, 0) / scored.length) : null;
+    const statusCounts = {};
+    context.leads.forEach(l => { statusCounts[l.status] = (statusCounts[l.status] || 0) + 1; });
+    const top = [...scored].sort((a, b) => b.aiScore - a.aiScore).slice(0, 5);
 
-    lines.push('=== LEADS DATA ===');
-    lines.push('Total leads: ' + context.leads.length);
-    lines.push('Added this month: ' + addedThisMonth);
-    lines.push('AI Scored: Hot=' + hot + ', Warm=' + warm + ', Cold=' + cold);
-    if (avgScore !== null) lines.push('Average AI Score: ' + avgScore);
-    lines.push('Status breakdown: ' + [
-      ...new Set(context.leads.map(l => l.status))
-    ].map(s => s + '=' + context.leads.filter(l => l.status === s).length).join(', '));
-    if (topLeads.length) {
-      lines.push('Top scored leads: ' + topLeads.map(l =>
-        l.name + (l.company ? ' (' + l.company + ')' : '') + ' Score:' + l.aiScore + ' Cat:' + l.aiCategory
-      ).join(' | '));
-    }
-    lines.push('All leads: ' + context.leads.map(l =>
-      l.name + (l.company ? '/' + l.company : '') +
-      ' [' + l.status + ']' +
-      (l.aiScore !== null && l.aiScore !== undefined ? ' AI:' + l.aiScore + '/' + l.aiCategory : '') +
-      (l.recommendedAction ? ' Action: ' + l.recommendedAction : '')
-    ).join('\n'));
+    lines.push('LEADS: ' + context.leads.length + ' total | Hot:' + hot + ' Warm:' + warm + ' Cold:' + cold + (avgScore !== null ? ' | Avg AI:' + avgScore : ''));
+    lines.push('Status: ' + Object.entries(statusCounts).map(([s, n]) => s + '=' + n).join(', '));
+    if (top.length) lines.push('Top: ' + top.map(l => l.name + (l.company ? '/' + l.company : '') + ' S:' + l.aiScore).join(' | '));
+    context.leads.slice(0, MAX_DETAIL_RECORDS).forEach(l => {
+      lines.push('• ' + l.name + (l.company ? '/' + l.company : '') + ' [' + l.status + ']' + (l.aiScore != null ? ' AI:' + l.aiScore + '/' + l.aiCategory : '') + (l.source ? ' ' + l.source : ''));
+    });
+    if (context.leads.length > MAX_DETAIL_RECORDS) lines.push('...and ' + (context.leads.length - MAX_DETAIL_RECORDS) + ' more leads');
     lines.push('');
   }
 
   if (context.tasks?.length) {
-    const overdue = context.tasks.filter(t => t.isOverdue);
-    const pending = context.tasks.filter(t => t.status === 'Pending');
-    const inProgress = context.tasks.filter(t => t.status === 'In Progress');
-    const completed = context.tasks.filter(t => t.status === 'Completed');
+    const overdue   = context.tasks.filter(t => t.isOverdue);
+    const byStatus  = {};
+    context.tasks.forEach(t => { byStatus[t.status] = (byStatus[t.status] || 0) + 1; });
 
-    lines.push('=== TASKS DATA ===');
-    lines.push('Total tasks: ' + context.tasks.length);
-    lines.push('Overdue: ' + overdue.length + ', Pending: ' + pending.length + ', In Progress: ' + inProgress.length + ', Completed: ' + completed.length);
-    if (overdue.length) {
-      lines.push('Overdue tasks: ' + overdue.map(t => t.title + ' (due ' + t.dueDate + ', priority: ' + t.priority + ')').join('; '));
-    }
-    lines.push('All tasks: ' + context.tasks.map(t =>
-      '"' + t.title + '" [' + t.status + '] Priority:' + t.priority + ' Due:' + t.dueDate + (t.isOverdue ? ' OVERDUE' : '')
-    ).join('\n'));
+    lines.push('TASKS: ' + context.tasks.length + ' total | ' + Object.entries(byStatus).map(([s, n]) => s + ':' + n).join(' | '));
+    if (overdue.length) lines.push('Overdue (' + overdue.length + '): ' + overdue.slice(0, 5).map(t => '"' + t.title + '" due:' + t.dueDate + ' ' + t.priority).join('; '));
+    context.tasks.slice(0, MAX_DETAIL_RECORDS).forEach(t => {
+      lines.push('• "' + t.title + '" [' + t.status + '] P:' + t.priority + ' Due:' + t.dueDate + (t.isOverdue ? ' ⚠OVERDUE' : ''));
+    });
+    if (context.tasks.length > MAX_DETAIL_RECORDS) lines.push('...and ' + (context.tasks.length - MAX_DETAIL_RECORDS) + ' more tasks');
     lines.push('');
   }
 
   if (context.clients?.length) {
-    const active = context.clients.filter(c => c.status === 'Active').length;
-    const pending = context.clients.filter(c => c.status === 'Pending').length;
-    const inactive = context.clients.filter(c => c.status === 'Inactive').length;
+    const byStatus = {};
+    context.clients.forEach(c => { byStatus[c.status] = (byStatus[c.status] || 0) + 1; });
 
-    lines.push('=== CLIENTS DATA ===');
-    lines.push('Total clients: ' + context.clients.length);
-    lines.push('Active: ' + active + ', Pending: ' + pending + ', Inactive: ' + inactive);
-    lines.push('All clients: ' + context.clients.map(c =>
-      c.name + ' / ' + c.company + ' [' + c.status + ']' + (c.notes ? ' Notes: ' + c.notes.slice(0, 80) : '')
-    ).join('\n'));
+    lines.push('CLIENTS: ' + context.clients.length + ' total | ' + Object.entries(byStatus).map(([s, n]) => s + ':' + n).join(' | '));
+    context.clients.slice(0, MAX_DETAIL_RECORDS).forEach(c => {
+      lines.push('• ' + c.name + ' / ' + c.company + ' [' + c.status + ']');
+    });
+    if (context.clients.length > MAX_DETAIL_RECORDS) lines.push('...and ' + (context.clients.length - MAX_DETAIL_RECORDS) + ' more clients');
     lines.push('');
   }
 
   if (context.pipeline?.length) {
-    const won = context.pipeline.filter(p => p.stage === 'Won');
-    const lost = context.pipeline.filter(p => p.stage === 'Lost');
-    const active = context.pipeline.filter(p => !['Won', 'Lost'].includes(p.stage));
-    const totalRevenue = won.reduce((s, p) => s + p.value, 0);
-    const pipelineValue = active.reduce((s, p) => s + p.value, 0);
+    const won    = context.pipeline.filter(p => p.stage === 'Won');
+    const active = context.pipeline.filter(p => !['Won','Lost'].includes(p.stage));
+    const lost   = context.pipeline.filter(p => p.stage === 'Lost');
+    const stageCounts = {};
+    context.pipeline.forEach(p => { stageCounts[p.stage] = (stageCounts[p.stage] || 0) + 1; });
 
-    lines.push('=== PIPELINE DATA ===');
-    lines.push('Total deals: ' + context.pipeline.length);
-    lines.push('Won deals: ' + won.length + ' (revenue: $' + totalRevenue.toLocaleString() + ')');
-    lines.push('Active deals: ' + active.length + ' (pipeline value: $' + pipelineValue.toLocaleString() + ')');
-    lines.push('Lost deals: ' + lost.length);
-    lines.push('Stage breakdown: ' + [
-      ...new Set(context.pipeline.map(p => p.stage))
-    ].map(s => s + '=' + context.pipeline.filter(p => p.stage === s).length).join(', '));
-    lines.push('All deals: ' + context.pipeline.map(p =>
-      '"' + p.title + '" Stage:' + p.stage + ' Value:$' + p.value.toLocaleString()
-    ).join('\n'));
+    lines.push('PIPELINE: ' + context.pipeline.length + ' deals | Won:' + won.length + ' ($' + won.reduce((s,p)=>s+p.value,0).toLocaleString() + ') | Active:' + active.length + ' ($' + active.reduce((s,p)=>s+p.value,0).toLocaleString() + ') | Lost:' + lost.length);
+    lines.push('Stages: ' + Object.entries(stageCounts).map(([s, n]) => s + '=' + n).join(', '));
+    context.pipeline.slice(0, MAX_DETAIL_RECORDS).forEach(p => {
+      lines.push('• "' + p.title + '" [' + p.stage + '] $' + p.value.toLocaleString());
+    });
+    if (context.pipeline.length > MAX_DETAIL_RECORDS) lines.push('...and ' + (context.pipeline.length - MAX_DETAIL_RECORDS) + ' more deals');
     lines.push('');
   }
 
@@ -234,29 +230,16 @@ function formatContextForPrompt(context) {
  */
 function buildSystemPrompt(context, intent) {
   const crmData = formatContextForPrompt(context);
-  const today = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+  const today = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
   return (
-    'You are ClientSphere AI, an expert CRM assistant embedded in the ClientSphere platform.\n' +
-    'Today is ' + today + '.\n\n' +
-    'YOUR ROLE:\n' +
-    '- Answer questions about CRM data (leads, clients, tasks, pipeline deals)\n' +
-    '- Provide actionable insights and recommendations\n' +
-    '- Generate professional email drafts and outreach content\n' +
-    '- Summarize trends and suggest next best actions\n' +
-    '- Be concise, professional, and data-driven\n\n' +
-    'FORMATTING RULES:\n' +
-    '- Use bullet points (•) for lists\n' +
-    '- Use emoji headers like 📊 📋 🔥 ✅ 📧 💡 to organize sections\n' +
-    '- Keep responses focused and actionable\n' +
-    '- When listing data, show the most important items first\n' +
-    '- Always end with a "Recommended Action" when relevant\n' +
-    '- Never modify data — only read and analyze\n' +
-    '- If asked about something not in the CRM data, say so clearly\n\n' +
-    'DETECTED INTENT: ' + intent.replace('_', ' ').toUpperCase() + '\n\n' +
-    'LIVE CRM DATA (as of ' + today + '):\n' +
-    (crmData || 'No data available in CRM.') + '\n\n' +
-    'Respond in the user\'s language. Be direct and professional. Max response ~300 words unless generating email content.'
+    'You are ClientSphere AI, a CRM assistant. Today: ' + today + '.\n' +
+    'Answer questions about CRM data, give actionable insights, draft emails.\n' +
+    'Use bullet points (•) and emoji headers (📊 🔥 ✅ 📧 💡). Be concise.\n' +
+    'Never modify data. Max ~250 words unless writing email content.\n' +
+    'Intent: ' + intent.replace('_', ' ').toUpperCase() + '\n\n' +
+    'CRM DATA:\n' +
+    (crmData || 'No data available.') + '\n'
   );
 }
 
@@ -282,8 +265,8 @@ export async function assistantChat(userMessage, conversationHistory, db) {
   const context = await buildContext(intent, db);
   const systemPrompt = buildSystemPrompt(context, intent);
 
-  // Build message history for Groq (limit to last 10 messages to control tokens)
-  const historySlice = conversationHistory.slice(-10).map(m => ({
+  // Build message history for Groq (limit to last 4 messages to control tokens)
+  const historySlice = conversationHistory.slice(-4).map(m => ({
     role: m.role,
     content: m.content,
   }));
@@ -293,6 +276,16 @@ export async function assistantChat(userMessage, conversationHistory, db) {
     ...historySlice,
     { role: 'user', content: userMessage },
   ];
+
+  // Rough token estimate: ~4 chars per token. Hard cap at 9000 tokens to stay under 12k TPM.
+  const rawText = messages.map(m => m.content).join(' ');
+  const estimatedTokens = Math.ceil(rawText.length / 4);
+  if (estimatedTokens > 9000) {
+    // Rebuild with summary-only context regardless of intent
+    const summaryContext = await buildContext('general', db);
+    const trimmedPrompt = buildSystemPrompt(summaryContext, intent);
+    messages[0] = { role: 'system', content: trimmedPrompt };
+  }
 
   const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
@@ -311,16 +304,14 @@ export async function assistantChat(userMessage, conversationHistory, db) {
   if (!response.ok) {
     const errorBody = await response.text();
     let parsedError;
-    try {
-      parsedError = JSON.parse(errorBody);
-    } catch {
-      parsedError = null;
-    }
-    // Fall back to smaller model if the 70b model is unavailable
-    if (response.status === 429 || response.status === 503) {
+    try { parsedError = JSON.parse(errorBody); } catch { parsedError = null; }
+
+    const errMsg = parsedError?.error?.message || errorBody;
+    // Fallback to 8b model for token-limit or availability errors
+    if (response.status === 429 || response.status === 503 || errMsg.toLowerCase().includes('too large') || errMsg.toLowerCase().includes('context')) {
       return assistantChatFallback(userMessage, messages, apiKey, intent);
     }
-    throw new Error(parsedError?.error?.message || 'Groq API error: ' + errorBody);
+    throw new Error(errMsg || 'Groq API error ' + response.status);
   }
 
   const data = await response.json();
@@ -333,9 +324,16 @@ export async function assistantChat(userMessage, conversationHistory, db) {
 }
 
 /**
- * Fallback to a smaller model if primary is unavailable.
+ * Fallback to a smaller, faster model (8b) if primary is overloaded or request is too large.
  */
 async function assistantChatFallback(userMessage, messages, apiKey, intent) {
+  // For the 8b model, further trim the system prompt to just the data section
+  const systemMsg = messages[0];
+  if (systemMsg && systemMsg.content.length > 3000) {
+    // Keep only the first 3000 chars of the system prompt (summary stats always come first)
+    systemMsg.content = systemMsg.content.slice(0, 3000) + '\n[Data truncated for token limits]';
+  }
+
   const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
     headers: {
@@ -346,13 +344,15 @@ async function assistantChatFallback(userMessage, messages, apiKey, intent) {
       model: 'llama-3.1-8b-instant',
       messages,
       temperature: 0.6,
-      max_tokens: 800,
+      max_tokens: 600,
     }),
   });
 
   if (!response.ok) {
     const errorBody = await response.text();
-    throw new Error('Groq API error: ' + errorBody);
+    let parsed;
+    try { parsed = JSON.parse(errorBody); } catch { parsed = null; }
+    throw new Error(parsed?.error?.message || 'Groq API error: ' + errorBody);
   }
 
   const data = await response.json();
