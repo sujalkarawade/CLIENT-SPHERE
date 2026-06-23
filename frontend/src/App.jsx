@@ -16,6 +16,7 @@ import { ClientsPage } from './pages/ClientsPage/ClientsPage';
 import { LeadsPage } from './pages/LeadsPage/LeadsPage';
 import { TasksPage } from './pages/TasksPage/TasksPage';
 import { PipelinePage } from './pages/PipelinePage/PipelinePage';
+import { CalendarPage } from './pages/CalendarPage/CalendarPage';
 import { AIEmailGeneratorPage } from './pages/AIEmailGeneratorPage/AIEmailGeneratorPage';
 import { AILeadScoringPage } from './pages/AILeadScoringPage/AILeadScoringPage';
 import { AIAssistantPage } from './pages/AIAssistantPage/AIAssistantPage';
@@ -62,6 +63,16 @@ export default function App() {
               <ProtectedRoute>
                 <DashboardLayout>
                   <TasksPage />
+                </DashboardLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/calendar"
+            element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <CalendarPage />
                 </DashboardLayout>
               </ProtectedRoute>
             }

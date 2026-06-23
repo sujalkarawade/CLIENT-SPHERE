@@ -12,6 +12,7 @@ import {
   Users,
   UserPlus,
   CheckSquare,
+  CalendarDays,
   Layers,
   Menu,
   X,
@@ -31,14 +32,15 @@ export const DashboardLayout = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const navigation = [
-    { name: 'Dashboard', to: '/dashboard', icon: LayoutDashboard },
-    { name: 'Clients', to: '/clients', icon: Users },
-    { name: 'Leads', to: '/leads', icon: UserPlus },
-    { name: 'Tasks', to: '/tasks', icon: CheckSquare },
-    { name: 'Sales Pipeline', to: '/pipeline', icon: Layers },
+    { name: 'Dashboard',    to: '/dashboard',      icon: LayoutDashboard },
+    { name: 'Clients',      to: '/clients',        icon: Users },
+    { name: 'Leads',        to: '/leads',          icon: UserPlus },
+    { name: 'Tasks',        to: '/tasks',          icon: CheckSquare },
+    { name: 'Calendar',     to: '/calendar',       icon: CalendarDays },
+    { name: 'Sales Pipeline', to: '/pipeline',     icon: Layers },
     { name: 'Email Generator', to: '/email-generator', icon: Mail },
     { name: 'Lead Scoring', to: '/ai-lead-scoring', icon: Brain },
-    { name: 'AI Assistant', to: '/ai-assistant', icon: Bot },
+    { name: 'AI Assistant', to: '/ai-assistant',   icon: Bot },
   ];
 
   const handleLogout = () => {
@@ -51,6 +53,7 @@ export const DashboardLayout = ({ children }) => {
     if (currentPath === '/email-generator') return 'AI Email Generator';
     if (currentPath === '/ai-lead-scoring') return 'AI Lead Scoring';
     if (currentPath === '/ai-assistant') return 'AI CRM Assistant';
+    if (currentPath === '/calendar') return 'Calendar';
     const match = navigation.find(item => item.to === currentPath);
     return match ? match.name : 'ClientSphere';
   };
