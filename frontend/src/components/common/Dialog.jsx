@@ -27,30 +27,47 @@ export const Dialog = ({ isOpen, onClose, title, children }) => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      {/* Dark backdrop element */}
+      {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black/70 backdrop-blur-md transition-opacity duration-300 pointer-events-auto"
+        className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300 pointer-events-auto"
         onClick={onClose}
       />
-      
-      {/* Modal core panel container */}
-      <div 
-        className="relative bg-[#0d0f17] border border-gray-800 rounded-xl shadow-2xl max-w-lg w-full overflow-hidden flex flex-col max-h-[90vh]"
+
+      {/* Modal panel */}
+      <div
+        style={{
+          background: 'var(--bg-primary)',
+          border: '1px solid var(--border-light)',
+          boxShadow: '0 24px 64px -12px rgba(0,0,0,0.6), 0 0 0 1px rgba(99,102,241,0.08)',
+        }}
+        className="relative rounded-xl max-w-lg w-full overflow-hidden flex flex-col max-h-[90vh] animate-slide-in"
         role="dialog"
         aria-modal="true"
       >
-        {/* Header summary panel */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-800/80 bg-[#0a0c12]">
-          <h2 className="font-display text-base font-semibold text-white tracking-tight">{title}</h2>
+        {/* Header */}
+        <div
+          style={{
+            background: 'var(--bg-secondary)',
+            borderBottom: '1px solid var(--border-color)',
+          }}
+          className="flex items-center justify-between px-6 py-4"
+        >
+          <h2
+            style={{ color: 'var(--text-primary)' }}
+            className="font-display text-sm font-semibold tracking-tight"
+          >
+            {title}
+          </h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-white p-1 rounded hover:bg-white/5 transition-colors duration-150"
+            style={{ color: 'var(--text-muted)' }}
+            className="p-1 rounded hover:bg-white/5 transition-colors duration-150 hover:text-white"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        {/* Dynamic child inputs list */}
+        {/* Body */}
         <div className="flex-1 overflow-y-auto px-6 py-5">
           {children}
         </div>
